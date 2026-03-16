@@ -91,6 +91,17 @@
             100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
         .bonus-item { animation: bonus-pop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        @keyframes zoomInEffect {
+          0% { transform: scale(0.1) translateZ(-500px); opacity: 0; }
+          100% { transform: scale(1) translateZ(0); opacity: 1; }
+        }
+        @keyframes zoomOutEffect {
+          0% { transform: scale(1) translateZ(0); opacity: 1; }
+          100% { transform: scale(0.1) translateZ(-500px); opacity: 0; }
+        }
+        .zoom-in-container { animation: zoomInEffect 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .zoom-out-container { animation: zoomOutEffect 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     </style>
 </head>
 <body>
@@ -160,30 +171,24 @@
             const draggingRef = useRef(false);
             const lastMousePos = useRef({ x: 0 });
 
-            // 自動巡迴邏輯：5秒旋轉 -> 隨機挑選一張放大6秒 -> 回到旋轉
             useEffect(() => {
                 let cycleTimeout;
-                
                 const startCycle = () => {
-                    // 第一階段：旋轉 5 秒
                     cycleTimeout = setTimeout(() => {
                         const randomIndex = Math.floor(Math.random() * items.length);
                         setFocusedImage(items[randomIndex]);
                         setIsZoomed(true);
 
-                        // 第二階段：放大顯示 6 秒
                         cycleTimeout = setTimeout(() => {
                             setIsZoomed(false);
-                            startCycle(); // 重新開始
+                            startCycle(); 
                         }, 6000);
                     }, 5000);
                 };
-
                 startCycle();
-
                 return () => {
                     clearTimeout(cycleTimeout);
-                    setIsZoomed(false); // 切換頁面時確保關閉放大層
+                    setIsZoomed(false);
                 };
             }, [items, setFocusedImage, setIsZoomed]);
 
@@ -192,7 +197,9 @@
                     if (!isZoomed) {
                         if (!draggingRef.current) rotationRef.current.targetY += 0.15; 
                         rotationRef.current.currentY += (rotationRef.current.targetY - rotationRef.current.currentY) * 0.08;
-                        if (stageRef.current) stageRef.current.style.transform = `translate3d(0, 0, ${-radius}px) rotateY(${rotationRef.current.currentY}deg)`;
+                        if (stageRef.current) {
+                          stageRef.current.style.transform = `translate3d(0, 0, ${-radius}px) rotateY(${rotationRef.current.currentY}deg)`;
+                        }
                     }
                     requestAnimationFrame(animate);
                 };
@@ -201,16 +208,14 @@
             }, [isZoomed, radius]);
 
             return (
-                <div className="absolute inset-0 flex items-center justify-center [perspective:1800px] z-10 touch-none"
-                    onPointerDown={(e) => { draggingRef.current = true; lastMousePos.current.x = e.clientX; }}
-                    onPointerMove={(e) => { if (draggingRef.current) { rotationRef.current.targetY += (e.clientX - lastMousePos.current.x) * 0.15; lastMousePos.current.x = e.clientX; } }}
-                    onPointerUp={() => draggingRef.current = false}>
+                <div className="absolute inset-0 flex items-center justify-center [perspective:1800px] z-10 touch-none transition-all duration-1000"
+                    style={{ transform: isZoomed ? 'scale(0.8) translateZ(-200px)' : 'scale(1) translateZ(0)', opacity: isZoomed ? 0.3 : 1 }}>
                     <div ref={stageRef} className="relative w-0 h-0 preserve-3d will-change-transform">
                         {items.map((it, i) => (
                             <div key={i} className="absolute w-[220px] h-[140px] -left-[110px] -top-[70px] preserve-3d" style={{ transform: `rotateY(${it.yaw}deg) rotateX(${-it.pitch}deg) translateZ(${radius}px)` }}>
-                                <div className="group relative w-full h-full p-[1px] rounded-lg transition-transform duration-500 hover:scale-110">
+                                <div className="group relative w-full h-full p-[1px] rounded-lg transition-transform duration-500">
                                     <div className="absolute inset-0 rounded-lg bg-white/10 border border-white/10" />
-                                    <div className="relative w-full h-full overflow-hidden rounded-md bg-black/40"><img src={it.src} alt={it.alt} className="w-full h-full object-cover opacity-60 group-hover:opacity-100" loading="lazy" /></div>
+                                    <div className="relative w-full h-full overflow-hidden rounded-md bg-black/40"><img src={it.src} alt={it.alt} className="w-full h-full object-cover opacity-60" loading="lazy" /></div>
                                 </div>
                             </div>
                         ))}
@@ -237,11 +242,10 @@
             </div>
         );
 
-        const SpeechSlide = ({ name1, name2 }) => (
+        const MergedSpeechSlide = () => (
             <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-6">
                 <div className="flex items-center justify-center w-full max-w-7xl transform -translate-y-8">
-                    <div className="flex items-center justify-center gap-[120px]">
-                        {/* 致詞標題區：寬度固定以確保對齊一致 */}
+                    <div className="flex items-center justify-center gap-[100px]">
                         <div className="anim-phase-1 flex flex-col items-center text-center w-[250px]">
                             <div className="flex gap-16 mb-2">
                                 <span className="text-5xl md:text-8xl font-bold text-orange-200/90 tracking-[0.5em] drop-shadow-lg">致</span>
@@ -249,10 +253,13 @@
                             </div>
                             <span className="text-orange-400/60 text-xl md:text-3xl font-light tracking-[0.3em] uppercase">Speech</span>
                         </div>
-                        {/* 姓名區：名字間距設定為 200px (約 5cm) */}
-                        <div className="anim-speech-names flex items-center whitespace-nowrap gap-[200px]">
-                            <span className="text-5xl md:text-8xl font-medium text-orange-300 tracking-wide drop-shadow-2xl">{name1}</span>
-                            <span className="text-5xl md:text-8xl font-medium text-orange-300 tracking-wide drop-shadow-2xl">{name2}</span>
+                        <div className="anim-speech-names flex flex-col items-start gap-12">
+                            <div className="flex items-center whitespace-nowrap gap-[200px]">
+                                <span className="text-4xl md:text-7xl font-medium text-orange-300 tracking-wide drop-shadow-2xl">Morris & Mikey</span>
+                            </div>
+                            <div className="flex items-center whitespace-nowrap gap-[200px]">
+                                <span className="text-4xl md:text-7xl font-medium text-orange-300 tracking-wide drop-shadow-2xl">Teddy & Kanji</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -295,18 +302,39 @@
         );
 
         const CompetitionSlide = () => {
-            const GroupBox = ({ title, tables }) => (
+            const pool = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19];
+            const [tables, setTables] = useState({ g1: [], g2: [], g3: [] });
+            const [revealed, setRevealed] = useState({ g1: false, g2: false, g3: false });
+
+            useEffect(() => {
+                const shuffled = [...pool].sort(() => Math.random() - 0.5);
+                setTables({
+                    g1: shuffled.slice(0, 6).sort((a,b)=>a-b).join(', '),
+                    g2: shuffled.slice(6, 12).sort((a,b)=>a-b).join(', '),
+                    g3: shuffled.slice(12).sort((a,b)=>a-b).join(', ')
+                });
+            }, []);
+
+            const GroupBox = ({ id, title, tables }) => (
                 <div className="flex flex-col items-center">
-                    <div className="w-full bg-emerald-900/30 border border-emerald-500/40 p-4 rounded-xl backdrop-blur-md shadow-2xl text-center">
+                    <div 
+                        onClick={() => setRevealed(prev => ({ ...prev, [id]: true }))}
+                        className={`w-full bg-emerald-900/30 border border-emerald-500/40 p-6 rounded-xl backdrop-blur-md shadow-2xl text-center cursor-pointer transition-all duration-700 ${revealed[id] ? '' : 'blur-xl hover:bg-emerald-800/40'}`}
+                    >
                         <span className="block text-emerald-400 font-bold mb-3 text-2xl uppercase tracking-wider">{title}</span>
-                        <p className="text-white text-3xl md:text-5xl font-black tracking-widest">{tables}</p>
+                        <p className="text-white text-3xl md:text-4xl font-black tracking-widest min-h-[1.5em]">{tables}</p>
                     </div>
-                    <div className="my-4 text-emerald-500/60">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                    {/* 箭頭指向最底下 */}
+                    <div className="mt-8 text-emerald-500/60 animate-bounce">
+                        <svg width="60" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <line x1="12" y1="2" x2="12" y2="22"></line>
+                            <polyline points="19 15 12 22 5 15"></polyline>
+                        </svg>
                     </div>
                     <div className="w-48 bg-white/5 border border-white/20 py-4 rounded-lg text-center"><span className="text-2xl md:text-3xl font-black text-orange-200 uppercase">晉級</span></div>
                 </div>
             );
+
             return (
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-6 animate-slide-up">
                     <div className="w-full max-w-7xl transform -translate-y-4">
@@ -314,14 +342,14 @@
                             <div className="flex flex-col items-start"><span className="text-orange-200/90 text-4xl md:text-6xl font-bold tracking-wide">Game 2</span></div>
                             <div className="text-right"><span className="text-orange-300 text-5xl md:text-7xl font-bold tracking-[0.2em] uppercase">競飲</span></div>
                         </div>
-                        <div className="grid grid-cols-3 gap-8 md:gap-16 mb-8">
-                            <GroupBox title="Group 1" tables="1, 2, 3, 5, 6, 7" />
-                            <GroupBox title="Group 2" tables="8, 9, 10, 11, 12, 13" />
-                            <GroupBox title="Group 3" tables="15, 16, 17, 18, 19" />
+                        <div className="grid grid-cols-3 gap-8 md:gap-16 mb-8 relative">
+                            <GroupBox id="g1" title="Group 1" tables={tables.g1} />
+                            <GroupBox id="g2" title="Group 2" tables={tables.g2} />
+                            <GroupBox id="g3" title="Group 3" tables={tables.g3} />
                         </div>
-                        <div className="flex flex-col items-center mt-4">
-                            <div className="px-24 py-8 bg-gradient-to-r from-orange-600/40 via-orange-400/40 to-orange-600/40 border-2 border-orange-400/60 rounded-2xl">
-                                <span className="text-4xl md:text-7xl font-bold text-white tracking-[0.5em] drop-shadow-2xl">冠・亞・季</span>
+                        <div className="flex flex-col items-center mt-12">
+                            <div className="px-32 py-10 bg-gradient-to-r from-orange-600/40 via-orange-400/40 to-orange-600/40 border-2 border-orange-400/60 rounded-2xl shadow-[0_0_80px_rgba(251,146,60,0.5)]">
+                                <span className="text-5xl md:text-8xl font-bold text-white tracking-[0.5em] drop-shadow-2xl">冠・亞・季</span>
                             </div>
                         </div>
                     </div>
@@ -338,9 +366,12 @@
                     </div>
                     <div className="flex flex-col items-start gap-8 md:gap-10 pl-10 border-l-4 border-emerald-500/50">
                         <div className="flex items-center gap-6"><div className="w-12 h-12 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-2xl">1</div><p className="text-3xl md:text-5xl font-bold text-orange-100 tracking-wide">每人手上已有一張「六合彩飛」</p></div>
-                        <div className="flex items-center gap-6"><div className="w-12 h-12 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-2xl">2</div><p className="text-3xl md:text-5xl font-bold text-orange-100 tracking-wide">MC會從 1 - 49 號中抽數字</p></div>
-                        <div className="flex items-center gap-6"><div className="w-12 h-12 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-2xl">3</div><p className="text-3xl md:text-5xl font-bold text-orange-100 tracking-wide">直至凑成 <span className="text-emerald-400 text-6xl px-4">4</span> 組號碼</p></div>
-                        <div className="flex items-center gap-6"><div className="w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center font-black text-2xl">!</div><p className="text-3xl md:text-5xl font-black text-red-400 tracking-widest bg-white/5 px-6 py-2 rounded-lg">最快抽齊者：立即舉手行出嚟！</p></div>
+                        <div className="flex items-center gap-6"><div className="w-12 h-12 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-2xl">2</div><p className="text-3xl md:text-5xl font-bold text-orange-100 tracking-wide">嘉賓會從 1 - 49 號中抽數字</p></div>
+                        <div className="flex items-center gap-6"><div className="w-12 h-12 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-2xl">3</div><p className="text-3xl md:text-5xl font-bold text-orange-100 tracking-wide">最快凑成 <span className="text-emerald-400 text-6xl px-4">4</span> 組號碼</p></div>
+                        <div className="flex items-center gap-6 mt-8">
+                            <div className="w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center font-black text-2xl">!</div>
+                            <p className="text-2xl md:text-4xl font-black text-red-500 tracking-widest bg-white/5 px-6 py-3 rounded-lg border border-red-500/30">名額只有五個，記得盡快舉手行出嚟喇！</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -449,8 +480,7 @@
             const allSlides = [
                 <GallerySlide items={domeItems} radius={FIXED_RADIUS} isZoomed={zoom} setFocusedImage={setFocusImg} setIsZoomed={setZoom} />,
                 <SloganSlide />,
-                <SpeechSlide name1="Morris" name2="Mikey" />,
-                <SpeechSlide name1="Teddy" name2="Kanji" />,
+                <MergedSpeechSlide />,
                 <AwardTitleSlide />,
                 <ServiceYearSlide years="10" names="David Tsang" />,
                 <ServiceYearSlide years="15" names="Kanji Kwok" />,
@@ -515,9 +545,10 @@
                     </div>
                     
                     {zoom && focusImg && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/98 backdrop-blur-3xl p-4" onClick={()=>setZoom(false)}>
-                            <div className="relative max-w-6xl max-h-[85vh] shadow-2xl rounded-2xl border border-white/10 overflow-hidden"><img src={focusImg.src} referrerPolicy="no-referrer" className="block w-full h-full object-contain" /></div>
-                            <button className="absolute top-8 right-8 p-4 bg-white/10 text-white rounded-full"><span className="text-xl">✕</span></button>
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-3xl p-4">
+                            <div className={`relative max-w-6xl max-h-[85vh] shadow-2xl rounded-2xl border border-white/10 overflow-hidden ${zoom ? 'zoom-in-container' : 'zoom-out-container'}`}>
+                                <img src={focusImg.src} className="block w-full h-full object-contain" />
+                            </div>
                         </div>
                     )}
                 </div>
