@@ -28,6 +28,11 @@
             font-family: "PingFang TC", "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
+        /* Slide 2 專用的書法/楷書字體系列 - 優雅且清晰 */
+        .calligraphy-font {
+            font-family: "STKaiti", "KaiTi", "BiauKai", "Apple LiSung", "Noto Serif TC", serif;
+        }
+
         /* 北極光背景特效 - 效能優化版 */
         .aurora-fluid { 
             position: absolute; 
@@ -212,15 +217,15 @@
             );
         };
 
-        // --- Slide 2: 標語頁面 (居中對齊優化) ---
+        // --- Slide 2: 標語頁面 (書法字體版) ---
         const SloganSlide = () => {
             const slogan1 = "冠世風華廿二載".split('');
             const slogan2 = "恆守初心志未改".split('');
 
             const renderLine = (chars) => (
-                <div className="flex justify-center items-center whitespace-nowrap">
+                <div className="flex justify-center items-center whitespace-nowrap calligraphy-font">
                     {chars.map((char, i) => (
-                        <span key={i} className="text-4xl md:text-7xl font-bold text-orange-200/95 tracking-widest drop-shadow-lg mx-[0.15em]">
+                        <span key={i} className="text-4xl md:text-8xl font-bold text-orange-200/95 tracking-widest drop-shadow-lg mx-[0.1em]">
                             {char}
                         </span>
                     ))}
@@ -252,8 +257,8 @@
                             </div>
                         </div>
 
-                        {/* 合併後的完整標語行 */}
-                        <div className="flex flex-col gap-8 md:gap-12 items-center">
+                        {/* 書法字體標語 */}
+                        <div className="flex flex-col gap-6 md:gap-8 items-center">
                             {renderLine(slogan1)}
                             {renderLine(slogan2)}
                         </div>
@@ -293,7 +298,7 @@
             );
         };
 
-        // --- Slide 4: Game 1 (居中對齊優化) ---
+        // --- Slide 4: Game 1 ---
         const GameSlide = () => {
             return (
                 <div className="absolute inset-0 flex items-center justify-center z-10 px-6 animate-slide-up">
