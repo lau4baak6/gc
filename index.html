@@ -28,12 +28,12 @@
             font-family: "PingFang TC", "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
-        /* 北極光背景特效 - 優化渲染效能 */
+        /* 北極光背景特效 - 效能優化版 */
         .aurora-fluid { 
             position: absolute; 
             width: 140vw; 
             height: 140vh; 
-            filter: blur(100px); /* 略微減少模糊度以提升 FPS */
+            filter: blur(100px); 
             opacity: 0.5; 
             mix-blend-mode: screen; 
             will-change: transform;
@@ -47,7 +47,6 @@
             100% { transform: translate(-5%,10%) rotate(-5deg); }
         }
 
-        /* 動畫效果 */
         .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
         .animate-slide-up { animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
@@ -57,13 +56,11 @@
             to { opacity: 1; transform: translateY(0) scale(1); } 
         }
 
-        /* 3D 渲染屬性 */
         .preserve-3d { transform-style: preserve-3d; }
 
-        /* 背景浮水印文字 */
         .watermark-text {
             position: absolute;
-            font-size: 20vw;
+            font-size: 15vw;
             font-weight: 900;
             color: rgba(255, 255, 255, 0.02);
             white-space: nowrap;
@@ -73,7 +70,6 @@
             transform: rotate(-15deg);
         }
 
-        /* 音樂頻譜動畫 */
         .music-bar {
             width: 3px;
             background: #10b981;
@@ -92,7 +88,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-        // --- 自定義圖標組件 ---
+        // --- 圖標 ---
         const IconX = () => (
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         );
@@ -111,9 +107,8 @@
 
         // --- 設定 ---
         const YOUTUBE_VIDEO_ID = 'jfKfPfyJRdk'; 
-        const FIXED_RADIUS = 1100; // 固定半徑以優化效能
+        const FIXED_RADIUS = 1100; 
 
-        // --- 圖片數據 ---
         const DRIVE_IDS = [
             '1_UDb1eM70zzDceSal-FoVtGG5gKvC2G5',
             '1C3rOoEzaVnu4n43vEirqvUiXJ0ooLmPW',
@@ -126,14 +121,13 @@
             alt: 'Dinner Archive'
         }));
 
-        // --- 工具函數：構建 3D 佈局 ---
         const buildItems = (pool, count) => {
             if (!pool || pool.length === 0) return [];
             const items = [];
             const rows = 6; 
             const itemsPerRow = Math.ceil(count / rows);
             const horizontalStep = 360 / itemsPerRow; 
-            const verticalStep = 11; // 略微增加垂直間距以適應 6 行排列
+            const verticalStep = 11; 
 
             for (let i = 0; i < count; i++) {
                 const rowIndex = (i % rows) - (rows - 1) / 2;
@@ -145,7 +139,7 @@
             return items;
         };
 
-        // --- 組件：Slide 1 (3D 畫廊) ---
+        // --- Slide 1: 3D 畫廊 ---
         const GallerySlide = ({ items, radius, isZoomed, setFocusedImage, setIsZoomed }) => {
             const stageRef = useRef(null);
             const rotationRef = useRef({ targetY: 0, currentY: 0 });
@@ -155,7 +149,6 @@
 
             const applyTransform = useCallback((y) => {
                 if (stageRef.current) {
-                    // 使用 translate3d 提升渲染效能
                     stageRef.current.style.transform = `translate3d(0, 0, ${-radius}px) rotateY(${y}deg)`;
                 }
             }, [radius]);
@@ -206,9 +199,7 @@
                                     className="group relative w-full h-full cursor-pointer p-[1px] rounded-lg transition-transform duration-500 hover:scale-110 active:scale-95"
                                     onClick={() => { setFocusedImage(it); setIsZoomed(true); }}
                                 >
-                                    {/* 磨砂邊緣 - 優化：移除背景模糊以提升 FPS */}
                                     <div className="absolute inset-0 rounded-lg bg-white/10 border border-white/10" />
-                                    
                                     <div className="relative w-full h-full overflow-hidden rounded-md bg-black/40">
                                         <img src={it.src} alt={it.alt} referrerPolicy="no-referrer" className="w-full h-full object-cover opacity-60 transition-opacity duration-700 group-hover:opacity-100 group-hover:scale-105" loading="lazy" />
                                         <div className="absolute inset-0 shadow-[inset_0_0_25px_rgba(0,0,0,0.4)]" />
@@ -221,8 +212,20 @@
             );
         };
 
-        // --- 組件：Slide 2 (公告/對聯) ---
+        // --- Slide 2: 標語頁面 ---
         const SloganSlide = () => {
+            const slogan1 = "冠世風華廿二載".split('');
+            const slogan2 = "恆守初心志未改".split('');
+
+            const renderChars = (chars) => chars.map((char, i) => (
+                <span 
+                    key={i} 
+                    className="text-4xl md:text-7xl font-bold text-orange-200/95 tracking-widest drop-shadow-lg mx-[0.1em]"
+                >
+                    {char}
+                </span>
+            ));
+
             return (
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-6 animate-slide-up">
                     <div className="flex flex-col items-center mb-12 opacity-90">
@@ -245,26 +248,19 @@
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-8 md:gap-12 items-center">
-                        <div className="flex flex-wrap justify-center items-center gap-2 md:gap-6">
-                            {"冠世風華".split('').map((char, i) => (
-                                <span key={i} className="text-4xl md:text-7xl font-bold text-orange-200/95 tracking-widest drop-shadow-lg">{char}</span>
-                            ))}
-                            <span className="text-4xl md:text-7xl font-bold text-orange-200/95 tracking-widest drop-shadow-lg ml-2 md:ml-4">廿二載</span>
+                    <div className="flex flex-col gap-10 md:gap-14 items-center">
+                        <div className="flex justify-center items-center">
+                            {renderChars(slogan1)}
                         </div>
-                        
-                        <div className="flex flex-wrap justify-center items-center gap-2 md:gap-6">
-                            {"恆守初心".split('').map((char, i) => (
-                                <span key={i} className="text-4xl md:text-7xl font-bold text-orange-200/95 tracking-widest drop-shadow-lg">{char}</span>
-                            ))}
-                            <span className="text-4xl md:text-7xl font-bold text-orange-200/95 tracking-widest drop-shadow-lg ml-2 md:ml-4">志未改</span>
+                        <div className="flex justify-center items-center">
+                            {renderChars(slogan2)}
                         </div>
                     </div>
                 </div>
             );
         };
 
-        // --- 組件：Slide 3 (獎金獎品) ---
+        // --- Slide 3: 獎金獎品 ---
         const PrizeSlide = () => {
             return (
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-6 animate-slide-up">
@@ -295,6 +291,48 @@
             );
         };
 
+        // --- Slide 4: Game 1 (被選中嘅幸運兒) ---
+        const GameSlide = () => {
+            return (
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-6 animate-slide-up">
+                    <div className="watermark-text" style={{ top: '5%', left: '5%', transform: 'rotate(-5deg)' }}>被選中嘅幸運兒</div>
+                    <div className="watermark-text" style={{ bottom: '10%', right: '5%', transform: 'rotate(5deg)' }}>被選中嘅幸運兒</div>
+                    
+                    <div className="w-full max-w-6xl relative z-10">
+                        {/* 頂部標題 */}
+                        <div className="flex justify-between items-start mb-16 md:mb-24">
+                            <div className="flex flex-col">
+                                <span className="text-orange-200/90 text-3xl md:text-5xl font-bold tracking-wide drop-shadow-md">Game 1</span>
+                                <div className="h-[2px] w-full bg-gradient-to-r from-orange-200/50 to-transparent mt-2"></div>
+                            </div>
+                            <div className="text-right">
+                                <span className="text-orange-300 text-2xl md:text-4xl font-bold tracking-widest drop-shadow-lg">被選中嘅幸運兒</span>
+                            </div>
+                        </div>
+
+                        {/* 中間說明 */}
+                        <div className="flex flex-col items-center gap-8 md:gap-12">
+                            <span className="text-orange-300/90 text-3xl md:text-5xl font-bold tracking-[0.4em]">玩法</span>
+                            <p className="text-orange-200/80 text-2xl md:text-4xl font-bold tracking-widest text-center leading-relaxed">
+                                每枱選中之號碼，該人可獲得
+                            </p>
+                            
+                            {/* 獎勵展示 */}
+                            <div className="flex items-center gap-4 md:gap-10 mt-6 scale-90 md:scale-100">
+                                <span className="text-6xl md:text-[9rem] font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-b from-yellow-100 via-orange-300 to-orange-400 drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+                                    現金
+                                </span>
+                                <span className="text-5xl md:text-8xl font-black text-red-500 drop-shadow-lg">+</span>
+                                <span className="text-6xl md:text-[9rem] font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-b from-pink-300 via-purple-400 to-blue-500 drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+                                    獎品
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // --- 背景音樂控制器 ---
         const BackgroundMusic = () => {
             const [isPlaying, setIsPlaying] = useState(false);
@@ -319,9 +357,7 @@
                             showinfo: 0,
                             modestbranding: 1
                         },
-                        events: {
-                            onReady: onPlayerReady
-                        }
+                        events: { onReady: onPlayerReady }
                     });
                 };
 
@@ -332,7 +368,6 @@
 
             const toggleMusic = () => {
                 if (!playerRef.current) return;
-                
                 if (isPlaying) {
                     playerRef.current.mute();
                 } else {
@@ -346,20 +381,16 @@
             return (
                 <div className="fixed top-6 right-6 z-50 flex items-center gap-3">
                     <div id="youtube-player" className="hidden"></div>
-                    
                     {isPlaying && (
                         <div className="flex items-end h-4 mb-1">
-                            <div className="music-bar" style={{ animationDelay: '0s' }}></div>
-                            <div className="music-bar" style={{ animationDelay: '0.2s' }}></div>
-                            <div className="music-bar" style={{ animationDelay: '0.4s' }}></div>
-                            <div className="music-bar" style={{ animationDelay: '0.1s' }}></div>
+                            {[0, 0.2, 0.4, 0.1].map((delay, i) => (
+                                <div key={i} className="music-bar" style={{ animationDelay: `${delay}s` }}></div>
+                            ))}
                         </div>
                     )}
-                    
                     <button 
                         onClick={toggleMusic}
                         className="p-3 bg-white/10 hover:bg-emerald-500/30 border border-white/20 rounded-full transition-all backdrop-blur-md text-white/80 hover:text-white"
-                        title={isPlaying ? "關閉音樂" : "開啟音樂"}
                     >
                         {isPlaying ? <IconMusic /> : <IconMusicOff />}
                     </button>
@@ -367,27 +398,24 @@
             );
         };
 
-        // --- 主程式進入點 ---
+        // --- 主程式 ---
         function App() {
             const [currentSlide, setCurrentSlide] = useState(0);
             const [isZoomed, setIsZoomed] = useState(false);
             const [focusedImage, setFocusedImage] = useState(null);
             
-            const totalItems = 120; // 優化：減少圖片總數以降低 CPU/RAM 負擔
+            const totalItems = 120; 
             const items = useMemo(() => buildItems(INITIAL_IMAGES, totalItems), []);
 
             return (
                 <div className="relative w-full h-screen bg-[#010401] overflow-hidden font-sans select-none touch-none">
                     <BackgroundMusic />
-
-                    {/* 背景流動極光層 */}
                     <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden scale-125">
                         <div className="aurora-fluid aurora-v1" />
                         <div className="aurora-fluid aurora-v2" />
                         <div className="aurora-fluid aurora-v3" />
                     </div>
 
-                    {/* 切換頁面內容 */}
                     {currentSlide === 0 && (
                         <GallerySlide 
                             items={items} 
@@ -399,8 +427,8 @@
                     )}
                     {currentSlide === 1 && <SloganSlide />}
                     {currentSlide === 2 && <PrizeSlide />}
+                    {currentSlide === 3 && <GameSlide />}
 
-                    {/* 導航控制按鈕 */}
                     <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-40 flex items-center gap-6 md:gap-10">
                         <button 
                             onClick={() => setCurrentSlide(prev => Math.max(0, prev - 1))}
@@ -410,7 +438,7 @@
                         </button>
                         
                         <div className="flex gap-3">
-                            {[0, 1, 2].map(idx => (
+                            {[0, 1, 2, 3].map(idx => (
                                 <div 
                                     key={idx}
                                     className={`w-3 h-3 rounded-full transition-all duration-500 ${currentSlide === idx ? 'bg-emerald-400 w-8' : 'bg-white/20'}`}
@@ -419,14 +447,13 @@
                         </div>
 
                         <button 
-                            onClick={() => setCurrentSlide(prev => Math.min(2, prev + 1))}
-                            className={`p-4 md:p-5 rounded-full border transition-all duration-500 backdrop-blur-md ${currentSlide < 2 ? 'border-emerald-500/60 bg-emerald-500/20 text-emerald-400 scale-110 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'border-white/5 text-white/10 opacity-30 cursor-not-allowed'}`}
+                            onClick={() => setCurrentSlide(prev => Math.min(3, prev + 1))}
+                            className={`p-4 md:p-5 rounded-full border transition-all duration-500 backdrop-blur-md ${currentSlide < 3 ? 'border-emerald-500/60 bg-emerald-500/20 text-emerald-400 scale-110 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'border-white/5 text-white/10 opacity-30 cursor-not-allowed'}`}
                         >
                             <IconChevronRight size={28} />
                         </button>
                     </div>
 
-                    {/* 圖片放大檢視層 */}
                     {isZoomed && focusedImage && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-3xl animate-fade-in p-4">
                             <div className="relative max-w-6xl max-h-[85vh] shadow-2xl rounded-2xl border border-white/10 overflow-hidden bg-black/40">
