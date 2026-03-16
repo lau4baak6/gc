@@ -67,6 +67,13 @@
 
         .preserve-3d { transform-style: preserve-3d; }
 
+        .watermark-text {
+            position: absolute; font-size: 15vw; font-weight: 900;
+            color: rgba(255, 255, 255, 0.02); white-space: nowrap;
+            user-select: none; pointer-events: none; z-index: 0;
+            transform: rotate(-15deg);
+        }
+
         .music-bar {
             width: 3px; background: #10b981; margin: 0 1px;
             animation: music-bounce 1s ease-in-out infinite;
@@ -91,7 +98,7 @@
         <div class="flex flex-col items-center gap-6">
             <img src="GC.png" alt="GC Logo" class="w-24 h-24 object-contain" />
             <div class="loader-bar-bg"><div id="loader-fill" class="loader-bar-fill"></div></div>
-            <div id="loader-text" class="text-[10px] text-emerald-500/60 tracking-widest uppercase font-medium">Downloading Assets...</div>
+            <div id="loader-text" class="text-[10px] text-emerald-500/60 tracking-widest uppercase font-medium">Syncing Data...</div>
         </div>
     </div>
 
@@ -153,6 +160,33 @@
             const draggingRef = useRef(false);
             const lastMousePos = useRef({ x: 0 });
 
+            // 自動巡迴邏輯：5秒旋轉 -> 隨機挑選一張放大6秒 -> 回到旋轉
+            useEffect(() => {
+                let cycleTimeout;
+                
+                const startCycle = () => {
+                    // 第一階段：旋轉 5 秒
+                    cycleTimeout = setTimeout(() => {
+                        const randomIndex = Math.floor(Math.random() * items.length);
+                        setFocusedImage(items[randomIndex]);
+                        setIsZoomed(true);
+
+                        // 第二階段：放大顯示 6 秒
+                        cycleTimeout = setTimeout(() => {
+                            setIsZoomed(false);
+                            startCycle(); // 重新開始
+                        }, 6000);
+                    }, 5000);
+                };
+
+                startCycle();
+
+                return () => {
+                    clearTimeout(cycleTimeout);
+                    setIsZoomed(false); // 切換頁面時確保關閉放大層
+                };
+            }, [items, setFocusedImage, setIsZoomed]);
+
             useEffect(() => {
                 const animate = () => {
                     if (!isZoomed) {
@@ -174,7 +208,7 @@
                     <div ref={stageRef} className="relative w-0 h-0 preserve-3d will-change-transform">
                         {items.map((it, i) => (
                             <div key={i} className="absolute w-[220px] h-[140px] -left-[110px] -top-[70px] preserve-3d" style={{ transform: `rotateY(${it.yaw}deg) rotateX(${-it.pitch}deg) translateZ(${radius}px)` }}>
-                                <div className="group relative w-full h-full cursor-pointer p-[1px] rounded-lg transition-transform duration-500 hover:scale-110" onClick={() => { setFocusedImage(it); setIsZoomed(true); }}>
+                                <div className="group relative w-full h-full p-[1px] rounded-lg transition-transform duration-500 hover:scale-110">
                                     <div className="absolute inset-0 rounded-lg bg-white/10 border border-white/10" />
                                     <div className="relative w-full h-full overflow-hidden rounded-md bg-black/40"><img src={it.src} alt={it.alt} className="w-full h-full object-cover opacity-60 group-hover:opacity-100" loading="lazy" /></div>
                                 </div>
@@ -207,6 +241,7 @@
             <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-6">
                 <div className="flex items-center justify-center w-full max-w-7xl transform -translate-y-8">
                     <div className="flex items-center justify-center gap-[120px]">
+                        {/* 致詞標題區：寬度固定以確保對齊一致 */}
                         <div className="anim-phase-1 flex flex-col items-center text-center w-[250px]">
                             <div className="flex gap-16 mb-2">
                                 <span className="text-5xl md:text-8xl font-bold text-orange-200/90 tracking-[0.5em] drop-shadow-lg">致</span>
@@ -214,7 +249,7 @@
                             </div>
                             <span className="text-orange-400/60 text-xl md:text-3xl font-light tracking-[0.3em] uppercase">Speech</span>
                         </div>
-                        {/* 名字間隔 200px (約 5cm) */}
+                        {/* 姓名區：名字間距設定為 200px (約 5cm) */}
                         <div className="anim-speech-names flex items-center whitespace-nowrap gap-[200px]">
                             <span className="text-5xl md:text-8xl font-medium text-orange-300 tracking-wide drop-shadow-2xl">{name1}</span>
                             <span className="text-5xl md:text-8xl font-medium text-orange-300 tracking-wide drop-shadow-2xl">{name2}</span>
@@ -251,7 +286,7 @@
 
         const GameTimeTitleSlide = () => (
             <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-6 animate-slide-up">
-                <div className="flex flex-col items-center transform -translate-y-8 pr-12 overflow-visible">
+                <div className="flex flex-col items-center transform -translate-y-8 pr-16 overflow-visible">
                     <h2 className="text-8xl md:text-[14rem] font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-yellow-200 via-emerald-400 to-emerald-600 drop-shadow-[0_20px_60px_rgba(16,185,129,0.5)] leading-tight whitespace-nowrap py-4">
                         GAME TIME!
                     </h2>
@@ -285,7 +320,7 @@
                             <GroupBox title="Group 3" tables="15, 16, 17, 18, 19" />
                         </div>
                         <div className="flex flex-col items-center mt-4">
-                            <div className="px-24 py-8 bg-gradient-to-r from-orange-600/40 via-orange-400/40 to-orange-600/40 border-2 border-orange-400/60 rounded-2xl shadow-[0_0_50px_rgba(251,146,60,0.4)]">
+                            <div className="px-24 py-8 bg-gradient-to-r from-orange-600/40 via-orange-400/40 to-orange-600/40 border-2 border-orange-400/60 rounded-2xl">
                                 <span className="text-4xl md:text-7xl font-bold text-white tracking-[0.5em] drop-shadow-2xl">冠・亞・季</span>
                             </div>
                         </div>
@@ -348,11 +383,11 @@
 
         const OutroSlide = () => (
             <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-6 animate-slide-up text-center">
-                <div className="flex flex-col items-center transform -translate-y-8 pr-12 overflow-visible">
+                <div className="flex flex-col items-center transform -translate-y-8 pr-16 overflow-visible">
                     <h2 className="text-7xl md:text-[9rem] font-bold text-white tracking-[0.2em] mb-12 drop-shadow-[0_0_30px_rgba(255,255,255,0.3)] italic whitespace-nowrap">感謝各位蒞臨</h2>
                     <div className="flex flex-col gap-4 mb-20">
                         <p className="text-4xl md:text-7xl font-bold text-orange-100 tracking-widest opacity-90 whitespace-nowrap">2026 冠恆集團春茗</p>
-                        <p className="text-4xl md:text-7xl font-bold text-orange-100 tracking-widest opacity-90">圓滿結束</p>
+                        <p className="text-4xl md:text-7xl font-bold text-orange-100 tracking-widest opacity-90 whitespace-nowrap">圓滿結束</p>
                     </div>
                     <h3 className="text-8xl md:text-[11rem] font-black text-yellow-400 tracking-tighter italic drop-shadow-[0_10px_40px_rgba(250,204,21,0.5)] animate-pulse whitespace-nowrap py-4">下年再見!</h3>
                 </div>
