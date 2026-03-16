@@ -16,9 +16,6 @@
     <!-- YouTube API -->
     <script src="https://www.youtube.com/iframe_api"></script>
 
-    <!-- Google Fonts: 行草書法字體 -->
-    <link href="https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
-
     <style>
         body, html {
             margin: 0; padding: 0;
@@ -29,19 +26,34 @@
             font-family: "PingFang TC", "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
-        /* 行草字體 */
-        .calligraphy-font {
-            font-family: 'Zhi Mang Xing', cursive;
+        /* 預載介面樣式 */
+        #preloader {
+            position: fixed; inset: 0;
+            background-color: #010401;
+            z-index: 9999;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            transition: opacity 0.8s ease-out;
+        }
+
+        .loader-bar-bg {
+            width: 200px; height: 2px;
+            background: rgba(255,255,255,0.1);
+            margin-top: 20px; position: relative;
+            overflow: hidden; border-radius: 2px;
+        }
+        .loader-bar-fill {
+            position: absolute; left: 0; top: 0; height: 100%;
+            background: #10b981; width: 0%;
+            transition: width 0.3s ease;
         }
 
         /* 極光背景 */
         .aurora-fluid { 
             position: absolute; 
             width: 140vw; height: 140vh; 
-            filter: blur(100px); 
-            opacity: 0.5; 
-            mix-blend-mode: screen; 
-            will-change: transform;
+            filter: blur(100px); opacity: 0.5; 
+            mix-blend-mode: screen; will-change: transform;
         }
         .aurora-v1 { background: radial-gradient(circle at 20% 20%, #064e3b 0%, transparent 65%); animation: aurora-flow 30s infinite alternate ease-in-out; top: -10%; left: -10%; }
         .aurora-v2 { background: radial-gradient(circle at 80% 80%, #065f46 0%, transparent 65%); animation: aurora-flow 35s infinite alternate-reverse ease-in-out; bottom: -10%; right: -10%; }
@@ -52,39 +64,20 @@
             100% { transform: translate(-5%,10%) rotate(-5deg); }
         }
 
-        /* 基礎動畫定義 */
-        @keyframes fadeIn {
+        /* Slide 2 專屬分段動畫 */
+        @keyframes fadeInMove {
             from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
-        /* 第一階段動畫：Logo & Title */
-        .anim-phase-1 {
-            animation: fadeIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        /* 第二階段動畫：Slogan (延遲進場) */
-        .anim-phase-2 {
-            opacity: 0;
-            animation: fadeIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.8s forwards;
-        }
-
-        /* 通用進場動畫 (Slide 3, 4 用) */
-        .animate-slide-up { 
-            animation: fadeIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
-        }
+        .anim-phase-1 { animation: fadeInMove 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .anim-phase-2 { opacity: 0; animation: fadeInMove 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.8s forwards; }
 
         .preserve-3d { transform-style: preserve-3d; }
 
         .watermark-text {
-            position: absolute;
-            font-size: 15vw;
-            font-weight: 900;
-            color: rgba(255, 255, 255, 0.02);
-            white-space: nowrap;
-            user-select: none;
-            pointer-events: none;
-            z-index: 0;
+            position: absolute; font-size: 15vw; font-weight: 900;
+            color: rgba(255, 255, 255, 0.02); white-space: nowrap;
+            user-select: none; pointer-events: none; z-index: 0;
             transform: rotate(-15deg);
         }
 
@@ -99,6 +92,16 @@
     </style>
 </head>
 <body>
+    <!-- 預載 HTML 結構 -->
+    <div id="preloader">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="w-8 h-8 border-2 border-emerald-500 flex items-center justify-center font-bold text-emerald-500 text-sm">GC</div>
+            <div class="text-white tracking-[0.2em] text-sm uppercase opacity-80">Good Century</div>
+        </div>
+        <div class="loader-bar-bg"><div id="loader-fill" class="loader-bar-fill"></div></div>
+        <div id="loader-text" class="text-[10px] text-emerald-500/60 mt-3 tracking-widest uppercase">Initializing Assets</div>
+    </div>
+
     <div id="root"></div>
 
     <script type="text/babel">
@@ -214,15 +217,15 @@
             );
         };
 
-        // --- Slide 2: Slogan (分段動畫版) ---
+        // --- Slide 2: Slogan (還原標準粗體 + 分段動畫) ---
         const SloganSlide = () => {
             const line1 = "冠世風華廿二載".split('');
             const line2 = "恆守初心志未改".split('');
             
             const renderLine = (chars) => (
-                <div className="flex justify-center items-center whitespace-nowrap calligraphy-font leading-none py-2">
+                <div className="flex justify-center items-center whitespace-nowrap leading-none py-2">
                     {chars.map((char, i) => (
-                        <span key={i} className="text-5xl md:text-[9rem] font-normal text-orange-200/95 tracking-[0.05em] drop-shadow-2xl mx-[0.05em]">
+                        <span key={i} className="text-4xl md:text-[9rem] font-black text-orange-200/95 tracking-[0.05em] drop-shadow-2xl mx-[0.05em]">
                             {char}
                         </span>
                     ))}
@@ -233,7 +236,6 @@
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-6">
                     <div className="flex flex-col items-center w-full transform -translate-y-12">
                         
-                        {/* 第一階段動畫：Logo & Title */}
                         <div className="anim-phase-1 flex flex-col items-center w-full">
                             <div className="flex flex-col items-center mb-8 opacity-90">
                                 <div className="flex items-center gap-4 mb-2">
@@ -251,7 +253,6 @@
                             </div>
                         </div>
 
-                        {/* 第二階段動畫：Slogan (延遲) */}
                         <div className="anim-phase-2 flex flex-col gap-2 items-center">
                             {renderLine(line1)}
                             {renderLine(line2)}
@@ -349,22 +350,58 @@
             const [slide, setSlide] = useState(0);
             const [zoom, setZoom] = useState(false);
             const [focusImg, setFocusImg] = useState(null);
+            const [isReady, setIsReady] = useState(false);
+            
             const items = useMemo(() => buildItems(INITIAL_IMAGES, 120), []);
+
+            // 預載邏輯
+            useEffect(() => {
+                const imageUrls = Array.from(new Set(items.map(it => it.src)));
+                let loadedCount = 0;
+                const total = imageUrls.length;
+
+                const updateLoader = () => {
+                    loadedCount++;
+                    const progress = (loadedCount / total) * 100;
+                    document.getElementById('loader-fill').style.width = progress + '%';
+                    if (loadedCount >= total) {
+                        setTimeout(() => {
+                            document.getElementById('preloader').style.opacity = '0';
+                            setTimeout(() => {
+                                document.getElementById('preloader').style.display = 'none';
+                                setIsReady(true);
+                            }, 800);
+                        }, 500);
+                    }
+                };
+
+                imageUrls.forEach(url => {
+                    const img = new Image();
+                    img.src = url;
+                    img.onload = updateLoader;
+                    img.onerror = updateLoader; // 即使出錯也繼續，防止卡死
+                });
+            }, [items]);
+
+            if (!isReady) return null;
+
             return (
-                <div className="relative w-full h-screen bg-[#010401] overflow-hidden select-none">
+                <div className="relative w-full h-screen bg-[#010401] overflow-hidden select-none animate-fade-in">
                     <BackgroundMusic />
                     <div className="absolute inset-0 z-0 scale-125"><div className="aurora-fluid aurora-v1"/><div className="aurora-fluid aurora-v2"/><div className="aurora-fluid aurora-v3"/></div>
                     {slide === 0 && <GallerySlide items={items} radius={FIXED_RADIUS} isZoomed={zoom} setFocusedImage={setFocusImg} setIsZoomed={setZoom} />}
                     {slide === 1 && <SloganSlide />}
                     {slide === 2 && <PrizeSlide />}
                     {slide === 3 && <GameSlide />}
+                    
                     <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-40 flex items-center gap-10">
                         <button onClick={()=>setSlide(p=>Math.max(0,p-1))} className={`p-5 rounded-full border transition-all ${slide>0 ? 'border-emerald-500/60 bg-emerald-500/20 text-emerald-400' : 'opacity-20'}`}><IconChevronLeft size={32}/></button>
                         <div className="flex gap-4">{[0,1,2,3].map(i=><div key={i} className={`w-3 h-3 rounded-full transition-all ${slide===i ? 'bg-emerald-400 w-10' : 'bg-white/20'}`}/>)}</div>
                         <button onClick={()=>setSlide(p=>Math.min(3,p+1))} className={`p-5 rounded-full border transition-all ${slide<3 ? 'border-emerald-500/60 bg-emerald-500/20 text-emerald-400' : 'opacity-20'}`}><IconChevronRight size={32}/></button>
                     </div>
+                    
                     {zoom && focusImg && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/98 backdrop-blur-3xl animate-fade-in p-4" onClick={()=>setZoom(false)}>
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/98 backdrop-blur-3xl p-4" onClick={()=>setZoom(false)}>
                             <div className="relative max-w-6xl max-h-[85vh] shadow-2xl rounded-2xl border border-white/10 overflow-hidden"><img src={focusImg.src} referrerPolicy="no-referrer" className="block w-full h-full object-contain" /></div>
                             <button className="absolute top-8 right-8 p-4 bg-white/10 text-white rounded-full"><IconX /></button>
                         </div>
