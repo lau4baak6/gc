@@ -28,31 +28,32 @@
             font-family: "PingFang TC", "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
-        /* 北極光背景特效 */
+        /* 北極光背景特效 - 優化渲染效能 */
         .aurora-fluid { 
             position: absolute; 
             width: 140vw; 
             height: 140vh; 
-            filter: blur(140px); 
-            opacity: 0.6; 
+            filter: blur(100px); /* 略微減少模糊度以提升 FPS */
+            opacity: 0.5; 
             mix-blend-mode: screen; 
+            will-change: transform;
         }
         .aurora-v1 { background: radial-gradient(circle at 20% 20%, #064e3b 0%, transparent 65%); animation: aurora-flow 30s infinite alternate ease-in-out; top: -10%; left: -10%; }
         .aurora-v2 { background: radial-gradient(circle at 80% 80%, #065f46 0%, transparent 65%); animation: aurora-flow 35s infinite alternate-reverse ease-in-out; bottom: -10%; right: -10%; }
         .aurora-v3 { background: radial-gradient(circle at 50% 50%, #0d9488 0%, transparent 55%); animation: aurora-flow 25s infinite alternate ease-in-out; top: 15%; left: 15%; }
         
         @keyframes aurora-flow {
-            0% { transform: translate(0,0) scale(1) rotate(0deg); border-radius: 40% 60% 70% 30%; }
-            100% { transform: translate(-10%,20%) scale(0.9) rotate(-10deg); border-radius: 30% 70% 50% 50%; }
+            0% { transform: translate(0,0) rotate(0deg); }
+            100% { transform: translate(-5%,10%) rotate(-5deg); }
         }
 
         /* 動畫效果 */
-        .animate-fade-in { animation: fadeIn 1s ease-out forwards; }
-        .animate-slide-up { animation: slideUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
+        .animate-slide-up { animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { 
-            from { opacity: 0; transform: translateY(40px) scale(0.95); } 
+            from { opacity: 0; transform: translateY(30px) scale(0.98); } 
             to { opacity: 1; transform: translateY(0) scale(1); } 
         }
 
@@ -64,7 +65,7 @@
             position: absolute;
             font-size: 20vw;
             font-weight: 900;
-            color: rgba(255, 255, 255, 0.03);
+            color: rgba(255, 255, 255, 0.02);
             white-space: nowrap;
             user-select: none;
             pointer-events: none;
@@ -110,6 +111,7 @@
 
         // --- 設定 ---
         const YOUTUBE_VIDEO_ID = 'jfKfPfyJRdk'; 
+        const FIXED_RADIUS = 1100; // 固定半徑以優化效能
 
         // --- 圖片數據 ---
         const DRIVE_IDS = [
@@ -131,7 +133,7 @@
             const rows = 6; 
             const itemsPerRow = Math.ceil(count / rows);
             const horizontalStep = 360 / itemsPerRow; 
-            const verticalStep = 8.5;
+            const verticalStep = 11; // 略微增加垂直間距以適應 6 行排列
 
             for (let i = 0; i < count; i++) {
                 const rowIndex = (i % rows) - (rows - 1) / 2;
@@ -153,15 +155,16 @@
 
             const applyTransform = useCallback((y) => {
                 if (stageRef.current) {
-                    stageRef.current.style.transform = `translateZ(${-radius}px) rotateY(${y}deg)`;
+                    // 使用 translate3d 提升渲染效能
+                    stageRef.current.style.transform = `translate3d(0, 0, ${-radius}px) rotateY(${y}deg)`;
                 }
             }, [radius]);
 
             useEffect(() => {
                 const animate = () => {
                     if (!isZoomed) {
-                        if (!draggingRef.current) rotationRef.current.targetY += 0.12; 
-                        const lerpFactor = 0.07; 
+                        if (!draggingRef.current) rotationRef.current.targetY += 0.15; 
+                        const lerpFactor = 0.08; 
                         rotationRef.current.currentY += (rotationRef.current.targetY - rotationRef.current.currentY) * lerpFactor;
                         applyTransform(rotationRef.current.currentY);
                     }
@@ -181,13 +184,13 @@
                 if (!draggingRef.current || isZoomed) return;
                 const x = e.clientX || (e.touches && e.touches[0].clientX);
                 const deltaX = x - lastMousePos.current.x;
-                rotationRef.current.targetY += deltaX * 0.12;
+                rotationRef.current.targetY += deltaX * 0.15;
                 lastMousePos.current.x = x;
             };
 
             return (
                 <div 
-                    className="absolute inset-0 flex items-center justify-center [perspective:2000px] z-10 animate-fade-in touch-none"
+                    className="absolute inset-0 flex items-center justify-center [perspective:1800px] z-10 animate-fade-in touch-none"
                     onPointerDown={onDown}
                     onPointerMove={onMove}
                     onPointerUp={() => draggingRef.current = false}
@@ -200,13 +203,15 @@
                                 style={{ transform: `rotateY(${it.yaw}deg) rotateX(${-it.pitch}deg) translateZ(${radius}px)` }}
                             >
                                 <div 
-                                    className="group relative w-full h-full cursor-pointer p-[1px] rounded-lg transition-all duration-700 hover:scale-115 active:scale-95"
+                                    className="group relative w-full h-full cursor-pointer p-[1px] rounded-lg transition-transform duration-500 hover:scale-110 active:scale-95"
                                     onClick={() => { setFocusedImage(it); setIsZoomed(true); }}
                                 >
-                                    <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-white/20 to-transparent opacity-30 border border-white/10 backdrop-blur-[1px]" />
-                                    <div className="relative w-full h-full overflow-hidden rounded-md bg-black/50 backdrop-blur-md">
-                                        <img src={it.src} alt={it.alt} referrerPolicy="no-referrer" className="w-full h-full object-cover opacity-50 transition-all duration-1000 group-hover:opacity-100 group-hover:scale-110 grayscale-[40%]" loading="lazy" />
-                                        <div className="absolute inset-0 shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]" />
+                                    {/* 磨砂邊緣 - 優化：移除背景模糊以提升 FPS */}
+                                    <div className="absolute inset-0 rounded-lg bg-white/10 border border-white/10" />
+                                    
+                                    <div className="relative w-full h-full overflow-hidden rounded-md bg-black/40">
+                                        <img src={it.src} alt={it.alt} referrerPolicy="no-referrer" className="w-full h-full object-cover opacity-60 transition-opacity duration-700 group-hover:opacity-100 group-hover:scale-105" loading="lazy" />
+                                        <div className="absolute inset-0 shadow-[inset_0_0_25px_rgba(0,0,0,0.4)]" />
                                     </div>
                                 </div>
                             </div>
@@ -367,25 +372,12 @@
             const [currentSlide, setCurrentSlide] = useState(0);
             const [isZoomed, setIsZoomed] = useState(false);
             const [focusedImage, setFocusedImage] = useState(null);
-            const [radius, setRadius] = useState(1150);
             
-            const containerRef = useRef(null);
-            const totalItems = 180; 
+            const totalItems = 120; // 優化：減少圖片總數以降低 CPU/RAM 負擔
             const items = useMemo(() => buildItems(INITIAL_IMAGES, totalItems), []);
 
-            useEffect(() => {
-                const updateLayout = () => {
-                    if (containerRef.current) {
-                        setRadius(Math.max(1050, containerRef.current.clientWidth * 0.95));
-                    }
-                };
-                updateLayout();
-                window.addEventListener('resize', updateLayout);
-                return () => window.removeEventListener('resize', updateLayout);
-            }, []);
-
             return (
-                <div ref={containerRef} className="relative w-full h-screen bg-[#010401] overflow-hidden font-sans select-none touch-none">
+                <div className="relative w-full h-screen bg-[#010401] overflow-hidden font-sans select-none touch-none">
                     <BackgroundMusic />
 
                     {/* 背景流動極光層 */}
@@ -399,7 +391,7 @@
                     {currentSlide === 0 && (
                         <GallerySlide 
                             items={items} 
-                            radius={radius} 
+                            radius={FIXED_RADIUS} 
                             isZoomed={isZoomed} 
                             setFocusedImage={setFocusedImage} 
                             setIsZoomed={setIsZoomed} 
