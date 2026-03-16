@@ -5,17 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>極簡 3D 晚宴畫廊</title>
     
-    <!-- 引入 React, ReactDOM 與 Babel (用來在瀏覽器中直接運行 JSX) -->
+    <!-- 定義 process 變數以防止手勢庫報錯 -->
+    <script>window.process = { env: { NODE_ENV: 'production' } };</script>
+    
+    <!-- 引入 React, ReactDOM 與 Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- 引入動畫手勢庫 -->
-    <script src="https://unpkg.com/@use-gesture/vanilla"></script>
+    <!-- 引入手勢庫的 UMD 版本，確保瀏覽器相容性 -->
+    <script src="https://cdn.jsdelivr.net/npm/@use-gesture/vanilla@10.3.1/dist/use-gesture-vanilla.umd.js"></script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html { width: 100%; height: 100%; background: #0a0a0a; overflow: hidden; font-family: sans-serif; }
+        body, html { width: 100%; height: 100%; background: #0a0a0a; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
 
         .sphere-root { 
             --radius: 600px; 
@@ -142,7 +145,7 @@
 
         const INITIAL_IMAGES = DRIVE_IDS.map(id => ({
           src: `https://drive.google.com/thumbnail?id=${id}&sz=w1000`,
-          alt: 'Dinner moment preview'
+          alt: '晚宴瞬間預覽'
         }));
 
         const wrapAngleSigned = deg => {
@@ -164,6 +167,8 @@
             alt: pool[i % pool.length].alt
           }));
         }
+
+        // --- 組件定義 ---
 
         function DomeGallery({ images }) {
           const rootRef = useRef(null);
@@ -188,6 +193,7 @@
             }
           }, []);
 
+          // 自動旋轉
           useEffect(() => {
             let raf;
             const rotate = () => {
@@ -201,6 +207,7 @@
             return () => cancelAnimationFrame(raf);
           }, [isZoomed, applyTransform]);
 
+          // 自動隨機縮放循環
           useEffect(() => {
             let timer;
             const startCycle = () => {
@@ -222,6 +229,7 @@
             return () => clearTimeout(timer);
           }, [images, isZoomed]);
 
+          // 響應式半徑調整
           useEffect(() => {
             const root = rootRef.current;
             if (!root) return;
@@ -257,12 +265,16 @@
             }
           };
 
-          // 使用 Vanilla Use-Gesture 處理拖拽
+          // 初始化拖拽手勢
           useEffect(() => {
             const target = mainRef.current;
-            if (!target) return;
+            // 嘗試從全域對象獲取 DragGesture，適配不同的 UMD 導出結構
+            const gestureLib = window.useGesture || window.Gesture;
+            if (!target || !gestureLib) return;
 
-            const drag = new MyGesture.DragGesture(target, ({ dragging, movement: [mx, my], first, last }) => {
+            const { DragGesture } = gestureLib;
+            
+            const drag = new DragGesture(target, ({ dragging, movement: [mx, my], first, last }) => {
                 if (isZoomed) return;
                 if (first) {
                     draggingRef.current = true;
@@ -270,11 +282,13 @@
                     startRotRef.current = { ...rotationRef.current };
                 }
                 
+                // 根據移動距離計算旋轉角度
                 rotationRef.current.y = wrapAngleSigned(startRotRef.current.y + mx / 20);
                 applyTransform(rotationRef.current.x, rotationRef.current.y);
 
                 if (last) {
                     draggingRef.current = false;
+                    // 延遲恢復自動旋轉
                     setTimeout(() => { if(!draggingRef.current) autoRotateRef.current = true; }, 2000);
                 }
             }, { eventOptions: { passive: true } });
@@ -323,9 +337,6 @@
           );
         }
 
-        // 由於 CDN 命名空間問題，稍微包裝一下 Gesture
-        window.MyGesture = window['@use-gesture/vanilla'];
-
         function App() {
           return (
             <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
@@ -334,9 +345,10 @@
           );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
+        // --- 執行渲染 ---
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
         root.render(<App />);
     </script>
 </body>
 </html>
-
