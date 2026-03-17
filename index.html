@@ -9,7 +9,6 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://www.youtube.com/iframe_api"></script>
 
     <style>
         body, html {
@@ -22,7 +21,6 @@
             touch-action: manipulation;
         }
 
-        /* 預載介面 */
         #preloader {
             position: fixed; inset: 0;
             background-color: #010401;
@@ -46,17 +44,21 @@
         .aurora-fluid { 
             position: absolute; 
             width: 140vw; height: 140vh; 
-            filter: blur(80px); opacity: 0.4; 
+            filter: blur(100px); opacity: 0.5; 
             mix-blend-mode: screen; will-change: transform;
-            z-index: 1;
+            z-index: 0;
         }
         .aurora-v1 { background: radial-gradient(circle at 20% 20%, #064e3b 0%, transparent 65%); animation: aurora-flow 30s infinite alternate ease-in-out; top: -10%; left: -10%; }
         .aurora-v2 { background: radial-gradient(circle at 80% 80%, #065f46 0%, transparent 65%); animation: aurora-flow 35s infinite alternate-reverse ease-in-out; bottom: -10%; right: -10%; }
-        .aurora-v3 { background: radial-gradient(circle at 50% 50%, #0d9488 0%, transparent 55%); animation: aurora-flow 25s infinite alternate ease-in-out; top: 15%; left: 15%; }
+        .aurora-white { background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.4) 0%, transparent 60%); animation: light-leak 20s infinite alternate ease-in-out; top: 0%; left: 0%; opacity: 0.3; }
         
         @keyframes aurora-flow {
             0% { transform: translate(0,0) rotate(0deg); }
             100% { transform: translate(-5%,10%) rotate(-5deg); }
+        }
+        @keyframes light-leak {
+            0% { transform: translate(-10%, -10%) scale(1); opacity: 0.2; }
+            100% { transform: translate(10%, 10%) scale(1.2); opacity: 0.4; }
         }
 
         @keyframes fadeInMove {
@@ -64,7 +66,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .anim-phase-1 { animation: fadeInMove 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .anim-phase-2 { opacity: 0; animation: fadeInMove 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards; }
 
         .preserve-3d { transform-style: preserve-3d; }
 
@@ -75,22 +76,19 @@
         }
         .bonus-item { animation: bonus-pop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
-        @keyframes zoomInEffect {
-          0% { transform: scale(0.1) translateZ(-500px); opacity: 0; }
-          100% { transform: scale(1) translateZ(0); opacity: 1; }
+        .welcome-overlay {
+            position: fixed; inset: 0; z-index: 9500;
+            background: rgba(0,0,0,0.6);
+            backdrop-blur: 50px; -webkit-backdrop-blur: 50px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            transition: all 2s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
         }
-        @keyframes zoomOutEffect {
-          0% { transform: scale(1) translateZ(0); opacity: 1; }
-          100% { transform: scale(0.1) translateZ(-500px); opacity: 0; }
-        }
-        .zoom-in-container { animation: zoomInEffect 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .zoom-out-container { animation: zoomOutEffect 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-        .watermark-text {
-            position: absolute; font-size: 15vw; font-weight: 900;
-            color: rgba(255, 255, 255, 0.02); white-space: nowrap;
-            user-select: none; pointer-events: none; z-index: 0;
-            transform: rotate(-15deg);
+        .welcome-overlay.revealed {
+            opacity: 0; pointer-events: none;
+            backdrop-blur: 0px; -webkit-backdrop-blur: 0px;
+            transform: scale(1.1);
         }
 
         .music-bar {
@@ -101,16 +99,21 @@
             0%, 100% { height: 4px; }
             50% { height: 16px; }
         }
+        .watermark-text {
+            position: absolute; font-size: 15vw; font-weight: 900;
+            color: rgba(255, 255, 255, 0.02); white-space: nowrap;
+            user-select: none; pointer-events: none; z-index: 0;
+            transform: rotate(-15deg);
+        }
     </style>
 </head>
 <body>
-    <!-- 預載 HTML -->
     <div id="preloader">
         <div class="flex flex-col items-center gap-8">
             <img src="LOGO.PNG" alt="LOGO" class="w-32 h-32 object-contain" onerror="this.style.display='none'"/>
             <div class="flex flex-col items-center">
                 <div class="loader-bar-bg"><div id="loader-fill" class="loader-bar-fill"></div></div>
-                <div id="loader-text" class="text-[10px] text-emerald-500/60 mt-4 tracking-widest uppercase font-bold animate-pulse">Initializing Media Assets...</div>
+                <div id="loader-text" class="text-[10px] text-emerald-500/60 mt-4 tracking-widest uppercase font-bold animate-pulse">Syncing Ceremony Assets...</div>
             </div>
         </div>
     </div>
@@ -120,34 +123,38 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-        // --- 1. 常量數據 ---
-        const YOUTUBE_VIDEO_ID = 'jfKfPfyJRdk'; 
+        // --- 1. 配置數據 ---
+        // 請將你的音樂檔案命名為 BGM.mp3 並放在 index.html 旁邊
+        const LOCAL_BGM_PATH = 'BGM.mp3'; 
 
         const PHOTO_IDS = [
-            "1knMls3mAamBlKH_t4ySVrs6KfPw0sDmC", "1ZdKRUiM7ZFDxm6QibycXVoGd0cPoE9iW", "1t7Awq7GMRNZRTssTNu1ZD1rk2c0KzCVl",
-            "1GKmX9R8IRLlLd2ZWUK4D7tLkgU6sPOZf", "1JEb3zqciiO5sy5qT5W-M40xsAdQr3_Fb", "1Gw5MYcXfsqqbW0FG1G_fesmCU-BJZKUu",
-            "11OqVqXbI-CczTuJiQTPftsosXwIdNlDU", "1EwkVkmb5oKVkCQT5Oy9-aWQ0W-MXjTVI", "1s6kZ7_-dxnQ_v9jDS7a8xbN91xNLNKYT",
-            "10Egokj03DgoxCe9KQKT60KvVNRofQCAY", "1uWR-Iz4ODPlDb1ZrjLgn-gcRoiFFIyUh", "1nEXMKj35tGeXcgve4I84rT69zCuXhDfM",
+            "1knMls3mAamBlKH_t4ySVrs6KfPw0sDmC", "1F8bx9ZMLYpWRFOMG4Y5tIv3V9-I5CL4R", "1ZdKRUiM7ZFDxm6QibycXVoGd0cPoE9iW",
+            "1fXrfApUDANmM218zBTlWJ98Zrzd-Gr8M", "1TYPcJ2OW0Bj6gHzsRA9DTTdXA2_jsKdz", "1kWxyJB2CmdA6VQnUJNYao_Bj9oPYDb36",
+            "1yQ6YR2V-Ys5BM2GCFrwdPuEDtvMZHoRo", "1t7Awq7GMRNZRTssTNu1ZD1rk2c0KzCVl", "1Zha71J9_63vS4C-OUj2WBRarqIkVmgku",
+            "1Lm2p1xnBy6VdVMx-gsqFfWsFoNYNf6BJ", "1GKmX9R8IRLlLd2ZWUK4D7tLkgU6sPOZf", "1wxVut_ZtkwS-N8jvhTW3OIVF0Pb0DIhA",
+            "1JEb3zqciiO5sy5qT5W-M40xsAdQr3_Fb", "1Gw5MYcXfsqqbW0FG1G_fesmCU-BJZKUu", "11OqVqXbI-CczTuJiQTPftsosXwIdNlDU",
+            "1EwkVkmb5oKVkCQT5Oy9-aWQ0W-MXjTVI", "1s6kZ7_-dxnQ_v9jDS7a8xbN91xNLNKYT", "10Egokj03DgoxCe9KQKT60KvVNRofQCAY",
+            "1uWR-Iz4ODPlDb1ZrjLgn-gcRoiFFIyUh", "17bQND5Zxy_k1ldL4wWA4zAW19FK_PF1d", "1nEXMKj35tGeXcgve4I84rT69zCuXhDfM",
             "1UFkpT0gMoKHsOqMvUSOgVyia_j11A879", "1NHbeFh9pvoJEPrFZaV6Az6WrkNWIeulX", "1A6Cb5COfMSyQH79iafwgsfzaudffnq1-",
             "1-FlhAjFmSSt4KdxK9R8nzgFpYeyLX40-", "14vKyX8UwYOgq6mPGshV5f64TXUtfL4iq", "1jOInBKCydn-ehCv7hiZs3OEWKSIavJH1",
             "1qsb4NRWhLQwKXlwepOlnl7Vrs-ExIU_B", "17gWRTBcG0SEtCFts_SeskfNlf_EDJVKH", "1fjWvVPus_ASteaPVBT92gdEX3eGFUMmF",
-            "1PmqdV_qmFX-LeRib9MNB9R8INoJGKgU7", "1bzH-ME_wtV8f2SVBC8zW7OBOoJvdCIe2", "1gjH9xXegIYOPIEa9XTB0B2qHJhMGbe75",
-            "1LLjCSEK7I-odIiOm0qvkIyKHr-elOzmd", "1EjsHmL4UB4Mg0JxJ85IAk-JpSlqxlsHe", "18GKg01F1eZXbyFxLERxdvgj6Ew-DAUJJ",
-            "1On9pdKNZgIk06DWGyMbQXq4RMD2Jfmqs", "16zC71HSFXkxm9KB9LDHP6_1HYSZaAlSv", "1n46l1nI7psCMreiSuoGudRq0MP2aJgN4",
-            "1I712FoMYSzQ4rAMy1jX8eeWMpGyDEzM1", "1Nx3qsnqsZieirQih-VBN7EcZkkyORWH0", "1iBSMZtc4Z0BxQ3nydIY-iE5TgKrsUajx",
-            "1yKKE5Q7JGzoZhCw8OlDeSUxJdytb928e", "18OsjvYI1JW5dju24rP-ix8pWmIBsfSqt", "1M_gMDPh15r3SIeLN72dKPeY75iAvuLGd",
-            "1Rd6A-fABAwEg9eIibiBaE7LGQr-hxtBf", "1oruBLNByp96xsRN95hXawT_AV1pHZeeB", "1S12khP_D_qlqnPSUeeBRreESJVgK9_m3",
-            "1A3z-fE3RvJi7ESnNTTSiRzDFA8JZemRT", "1Q8SiWvzyt40hSlDcIV8i_-1spD3PfMFD", "1IyhrBzyuiDaQXqfvZcQinHF80zA8Bxd-",
-            "1JymhC6qIx-dMvlOGdX30ASptCLlglIL-", "1LNQ06KGXBQPYjoA9YynZ9HBM7nn4IG8F", "11prZdRjjySaSsdCU9VFzgrAdZNV79Mfy",
-            "1lxPe1vGpXvBEQWZBl4BRaSuGk1N_xvIR", "1gHoy4yflKfycqMGpKgxXVslG0iCF8Owy", "17Xd_wM0m8AxGnY4UlRlc7yvQ5hp70xaJ",
-            "1N_oD_-U9Hs49vVSpoFZTfNbeKacoXO4m", "1QqVNHQM7GeEan1sYaAkNsatbFKx_-znZ", "10WUCzLfA2k8-cnOj0UAcfQM8um_B1Ddl",
-            "187vtUs5JS22HH74GhHnAT6aBdUibcJPn", "1QS7ZBoxw6NBEkt5TLo649Fy69YpboC_0", "1F8bx9ZMLYpWRFOMG4Y5tIv3V9-I5CL4R",
+            "1PmqdV_qmFX-LeRib9MNB9R8INoJGKgU7", "1bzH-ME_wtV8f2SVBC8zW7OBOoJvdCIe2", "1kc-P0V3RldSNXSTmaBdyAxGCc_-ubR8J",
+            "1gjH9xXegIYOPIEa9XTB0B2qHJhMGbe75", "1LLjCSEK7I-odIiOm0qvkIyKHr-elOzmd", "1EjsHmL4UB4Mg0JxJ85IAk-JpSlqxlsHe",
+            "18GKg01F1eZXbyFxLERxdvgj6Ew-DAUJJ", "1On9pdKNZgIk06DWGyMbQXq4RMD2Jfmqs", "16zC71HSFXkxm9KB9LDHP6_1HYSZaAlSv",
+            "1n46l1nI7psCMreiSuoGudRq0MP2aJgN4", "1I712FoMYSzQ4rAMy1jX8eeWMpGyDEzM1", "1Nx3qsnqsZieirQih-VBN7EcZkkyORWH0",
+            "1iBSMZtc4Z0BxQ3nydIY-iE5TgKrsUajx", "1yKKE5Q7JGzoZhCw8OlDeSUxJdytb928e", "18OsjvYI1JW5dju24rP-ix8pWmIBsfSqt",
+            "1M_gMDPh15r3SIeLN72dKPeY75iAvuLGd", "1Rd6A-fABAwEg9eIibiBaE7LGQr-hxtBf", "1oruBLNByp96xsRN95hXawT_AV1pHZeeB",
+            "1S12khP_D_qlqnPSUeeBRreESJVgK9_m3", "1A3z-fE3RvJi7ESnNTTSiRzDFA8JZemRT", "1Q8SiWvzyt40hSlDcIV8i_-1spD3PfMFD",
+            "1IyhrBzyuiDaQXqfvZcQinHF80zA8Bxd-", "1JymhC6qIx-dMvlOGdX30ASptCLlglIL-", "1LNQ06KGXBQPYjoA9YynZ9HBM7nn4IG8F",
+            "11prZdRjjySaSsdCU9VFzgrAdZNV79Mfy", "1lxPe1vGpXvBEQWZBl4BRaSuGk1N_xvIR", "1gHoy4yflKfycqMGpKgxXVslG0iCF8Owy",
+            "17Xd_wM0m8AxGnY4UlRlc7yvQ5hp70xaJ", "1N_oD_-U9Hs49vVSpoFZTfNbeKacoXO4m", "1QqVNHQM7GeEan1sYaAkNsatbFKx_-znZ",
+            "10WUCzLfA2k8-cnOj0UAcfQM8um_B1Ddl", "187vtUs5JS22HH74GhHnAT6aBdUibcJPn", "1QS7ZBoxw6NBEkt5TLo649Fy69YpboC_0",
             "18YzR9G1Lw4WUUsHSEF-xGKmM18fxNREw"
         ];
 
         const PHOTO_ITEMS = PHOTO_IDS.map(id => ({
             src: `https://drive.google.com/thumbnail?id=${id}&sz=w800`,
-            alt: 'archive'
+            alt: 'dinner'
         }));
 
         const PRIZES = [
@@ -171,9 +178,9 @@
             return items;
         }
 
-        // --- 2. Components ---
+        // --- 2. 組件定義 ---
 
-        const GallerySlide = ({ items, isZoomed, setIsZoomed, setFocusedImage, focusedImage }) => {
+        function GallerySlide({ items, isZoomed, setIsZoomed, setFocusedImage, focusedImage }) {
             const stageRef = useRef(null);
             const rotationRef = useRef({ currentY: 0, targetY: 0 });
             const [radius, setRadius] = useState(1100);
@@ -228,144 +235,150 @@
                     </div>
                 </div>
             );
-        };
+        }
 
-        const SloganSlide = () => (
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-4 text-center">
-                <div className="flex flex-col items-center w-full transform -translate-y-4 md:-translate-y-12 relative">
-                    <div className="relative w-full flex justify-center items-center">
-                        <img src="LOGO.PNG" alt="Logo" className="w-full max-w-[95vw] md:max-w-4xl h-auto object-contain drop-shadow-[0_20px_60px_rgba(0,0,0,0.8)] anim-phase-1 relative z-50" />
-                    </div>
-                    <div className="anim-phase-1 mt-6">
-                        <h1 className="text-4xl md:text-8xl font-light tracking-[0.1em] text-transparent bg-clip-text bg-gradient-to-r from-yellow-100 via-orange-300 to-yellow-200 leading-tight drop-shadow-lg">ANNUAL DINNER</h1>
-                        <div className="flex items-center gap-4 mt-2 justify-center"><span className="text-orange-300/80 text-xl md:text-3xl font-medium tracking-[0.5em]">2 0 2 5</span></div>
-                    </div>
-                    <div className="anim-phase-2 flex flex-col gap-2 mt-8 md:mt-16 w-full">
-                        <span className="text-[8.5vw] md:text-[5.5rem] font-black text-orange-200/95 tracking-[0.05em] drop-shadow-2xl whitespace-nowrap">冠世風華廿二載</span>
-                        <span className="text-[8.5vw] md:text-[5.5rem] font-black text-orange-200/95 tracking-[0.05em] drop-shadow-2xl whitespace-nowrap">恆守初心志未改</span>
-                    </div>
-                </div>
-            </div>
-        );
-
-        const MergedSpeechSlide = () => (
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6">
-                <div className="flex flex-col md:flex-row items-center justify-center w-full max-w-7xl transform -translate-y-8 gap-8 md:gap-[100px]">
-                    <div className="anim-phase-1 flex flex-col items-center text-center w-[250px]">
-                        <div className="flex gap-10 md:gap-16 mb-2">
-                            <span className="text-6xl md:text-8xl font-bold text-orange-200/90 tracking-[0.5em] drop-shadow-lg">致</span>
-                            <span className="text-6xl md:text-8xl font-bold text-orange-200/90 tracking-[0.5em] drop-shadow-lg">詞</span>
+        function SloganSlide() {
+            return (
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-4 text-center">
+                    <div className="flex flex-col items-center w-full transform -translate-y-4 md:-translate-y-12 relative">
+                        <img src="LOGO.PNG" alt="Logo" className="w-full max-w-[95vw] md:max-w-5xl h-auto object-contain drop-shadow-[0_20px_60px_rgba(255,255,255,0.3)] anim-phase-1 relative z-50" />
+                        <div className="anim-phase-1 mt-6">
+                            <h1 className="text-4xl md:text-8xl font-light tracking-[0.1em] text-transparent bg-clip-text bg-gradient-to-r from-white via-yellow-200 to-white leading-tight drop-shadow-lg">ANNUAL DINNER</h1>
+                            <div className="flex items-center gap-4 mt-2 justify-center"><span className="text-orange-300/80 text-xl md:text-3xl font-medium tracking-[0.5em]">2 0 2 5</span></div>
                         </div>
-                        <span className="text-orange-400/60 text-2xl md:text-3xl font-light tracking-[0.3em] uppercase">Speech</span>
-                    </div>
-                    <div className="anim-speech-names flex flex-col items-center md:items-start gap-8 md:gap-[5cm]">
-                        <span className="text-4xl md:text-7xl lg:text-8xl font-medium text-orange-300 drop-shadow-2xl whitespace-nowrap">Morris & Mikey</span>
-                        <div className="h-[2px] w-20 md:hidden bg-white/20" />
-                        <span className="text-4xl md:text-7xl lg:text-8xl font-medium text-orange-300 drop-shadow-2xl whitespace-nowrap">Teddy & Kanji</span>
+                        <div className="anim-phase-2 flex flex-col gap-2 mt-10 md:mt-16 w-full">
+                            <span className="text-[8.5vw] md:text-[5.5rem] font-black text-white/95 tracking-[0.05em] drop-shadow-2xl whitespace-nowrap">冠世風華廿二載</span>
+                            <span className="text-[8.5vw] md:text-[5.5rem] font-black text-white/95 tracking-[0.05em] drop-shadow-2xl whitespace-nowrap">恆守初心志未改</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-        );
+            );
+        }
 
-        const CompetitionSlide = () => {
+        function MergedSpeechSlide() {
+            return (
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6">
+                    <div className="flex flex-col md:flex-row items-center justify-center w-full max-w-7xl transform -translate-y-8 gap-8 md:gap-[100px]">
+                        <div className="anim-phase-1 flex flex-col items-center text-center w-[250px]">
+                            <div className="flex gap-10 md:gap-16 mb-2">
+                                <span className="text-6xl md:text-8xl font-bold text-white tracking-[0.5em] drop-shadow-lg">致</span>
+                                <span className="text-6xl md:text-8xl font-bold text-white tracking-[0.5em] drop-shadow-lg">詞</span>
+                            </div>
+                            <span className="text-emerald-500/80 text-2xl md:text-3xl font-light tracking-[0.3em] uppercase">Speech</span>
+                        </div>
+                        <div className="anim-speech-names flex flex-col items-center md:items-start gap-6 md:gap-[150px]">
+                            <span className="text-[10vw] md:text-7xl lg:text-8xl font-medium text-white drop-shadow-2xl whitespace-nowrap">Morris & Mikey</span>
+                            <div className="h-[2px] w-32 md:hidden bg-white/20 my-2" />
+                            <span className="text-[10vw] md:text-7xl lg:text-8xl font-medium text-white drop-shadow-2xl whitespace-nowrap">Teddy & Kanji</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function CompetitionSlide() {
             const groupData = { g1: "2, 5, 8, 11, 15, 18", g2: "1, 6, 9, 12, 16, 19", g3: "3, 7, 10, 13, 17" };
             const [revealed, setRevealed] = useState({ g1: false, g2: false, g3: false });
             return (
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-4 md:px-6">
                     <div className="w-full max-w-7xl transform -translate-y-4 md:-translate-y-8">
                         <div className="w-full flex justify-between items-end mb-6 md:mb-12 border-b border-white/10 pb-4">
-                            <span className="text-orange-200/90 text-3xl md:text-6xl font-bold tracking-wide">Game 2</span>
-                            <span className="text-orange-300 text-4xl md:text-8xl font-bold uppercase">競飲</span>
+                            <span className="text-emerald-500 text-2xl md:text-6xl font-bold tracking-wide">Game 2</span>
+                            <span className="text-white text-4xl md:text-8xl font-bold uppercase">競飲</span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-14 mb-8">
                             {['g1','g2','g3'].map((id, idx) => (
                                 <div key={id} className="flex flex-col items-center">
-                                    <div onClick={() => setRevealed(p=>({...p, [id]:true}))} className={`w-full bg-emerald-900/30 border border-emerald-500/40 p-6 md:p-8 rounded-xl cursor-pointer transition-all duration-1000 ${revealed[id] ? 'blur-0 bg-emerald-800/40' : 'blur-2xl'}`}>
-                                        <span className="block text-emerald-400 font-bold mb-3 text-xl md:text-3xl uppercase tracking-tighter">Group {idx+1}</span>
-                                        <p className="text-white text-3xl md:text-4xl font-black">{groupData[id]}</p>
+                                    <div onClick={() => setRevealed(p=>({...p, [id]:true}))} className={`w-full bg-white/5 border border-white/10 p-5 md:p-8 rounded-xl cursor-pointer transition-all duration-1000 ${revealed[id] ? 'blur-0 bg-white/10' : 'blur-2xl'}`}>
+                                        <span className="block text-yellow-500 font-bold mb-3 text-lg md:text-2xl uppercase">Group {idx+1}</span>
+                                        <p className="text-white text-2xl md:text-4xl font-black">{groupData[id]}</p>
                                     </div>
                                     <div className="mt-4 text-emerald-500 animate-bounce text-2xl md:text-4xl">↓</div>
-                                    <div className="w-full bg-white/5 border border-white/20 py-3 md:py-4 rounded-lg text-center mt-2 md:mt-0 shadow-lg"><span className="text-xl md:text-2xl font-black text-orange-200 uppercase">晉級</span></div>
+                                    <div className="w-full bg-white/5 border border-white/20 py-2 md:py-4 rounded-lg text-center mt-2 md:mt-0 shadow-lg"><span className="text-xl md:text-2xl font-black text-white uppercase opacity-80">晉級</span></div>
                                 </div>
                             ))}
                         </div>
                         <div className="flex justify-center mt-6">
-                            <div className="px-10 py-5 md:px-32 md:py-10 bg-gradient-to-r from-orange-600/40 via-orange-400/40 to-orange-600/40 border-2 border-orange-400/60 rounded-2xl shadow-[0_0_80px_rgba(251,146,60,0.5)] text-center">
+                            <div className="px-10 py-5 md:px-32 md:py-10 bg-gradient-to-r from-emerald-600/40 via-emerald-400/40 to-emerald-600/40 border-2 border-emerald-400/60 rounded-2xl shadow-[0_0_80px_rgba(16,185,129,0.3)] text-center">
                                 <span className="text-3xl md:text-8xl font-bold text-white tracking-widest drop-shadow-2xl">冠・亞・季</span>
                             </div>
                         </div>
                     </div>
                 </div>
             );
-        };
+        }
 
-        const BingoSlide = () => (
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 animate-slide-up">
-                <div className="w-full max-w-6xl transform -translate-y-8">
-                    <div className="flex justify-between items-end mb-10 md:mb-12 border-b border-white/10 pb-4">
-                        <span className="text-orange-200/90 text-2xl md:text-6xl font-bold">Game 3</span>
-                        <span className="text-orange-300 text-6xl md:text-[11rem] font-black italic drop-shadow-2xl">BINGO!</span>
-                    </div>
-                    <div className="space-y-6 md:space-y-12 pl-6 border-l-4 border-emerald-500/50">
-                        <div className="flex items-center gap-6"><div className="w-10 h-10 md:w-14 md:h-14 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-xl">1</div><p className="text-xl md:text-5xl font-bold text-orange-100 leading-tight">每人手上已有一張「六合彩飛」</p></div>
-                        <div className="flex items-center gap-6"><div className="w-10 h-10 md:w-14 md:h-14 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-xl">2</div><p className="text-xl md:text-5xl font-bold text-orange-100 leading-tight">嘉賓會從 1 - 49 號中抽數字</p></div>
-                        <div className="flex items-center gap-6"><div className="w-10 h-10 md:w-14 md:h-14 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-xl">3</div><p className="text-xl md:text-5xl font-bold text-orange-100 leading-tight">最快凑成 <span className="text-emerald-400 text-4xl md:text-7xl px-2 font-black">4</span> 組號碼</p></div>
-                        <div className="p-4 md:p-10 bg-red-600/10 border-2 border-red-500/30 rounded-2xl mt-10 shadow-2xl">
-                            <p className="text-lg md:text-4xl font-black text-red-500 tracking-wider">名額只有五個，記得盡快舉手行出嚟喇！</p>
+        function BingoSlide() {
+            return (
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 animate-slide-up">
+                    <div className="w-full max-w-6xl transform -translate-y-8">
+                        <div className="flex justify-between items-end mb-10 md:mb-12 border-b border-white/10 pb-4">
+                            <span className="text-emerald-500 text-2xl md:text-6xl font-bold">Game 3</span>
+                            <span className="text-white text-6xl md:text-[11rem] font-black italic drop-shadow-2xl">BINGO!</span>
+                        </div>
+                        <div className="space-y-6 md:space-y-12 pl-6 border-l-4 border-yellow-500/50">
+                            <div className="flex items-center gap-6"><div className="w-10 h-10 md:w-14 md:h-14 bg-yellow-500 text-black rounded-full flex items-center justify-center font-black text-xl">1</div><p className="text-xl md:text-5xl font-bold text-white leading-tight">每人手上已有一張「六合彩飛」</p></div>
+                            <div className="flex items-center gap-6"><div className="w-10 h-10 md:w-14 md:h-14 bg-yellow-500 text-black rounded-full flex items-center justify-center font-black text-xl">2</div><p className="text-xl md:text-5xl font-bold text-white leading-tight">嘉賓會從 1 - 49 號中抽數字</p></div>
+                            <div className="flex items-center gap-6"><div className="w-10 h-10 md:w-14 md:h-14 bg-yellow-500 text-black rounded-full flex items-center justify-center font-black text-xl">3</div><p className="text-xl md:text-5xl font-bold text-white leading-tight">最快凑成 <span className="text-yellow-500 text-5xl md:text-7xl px-2 font-black">4</span> 組號碼</p></div>
+                            <div className="p-4 md:p-10 bg-red-600/10 border-2 border-red-500/30 rounded-2xl mt-10 shadow-2xl">
+                                <p className="text-lg md:text-4xl font-black text-red-500 tracking-wider">名額只有五個，記得盡快舉手行出嚟喇！</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        );
+            );
+        }
 
-        const PrizeListSlide = ({ start, end }) => {
+        function PrizeListSlide({ start, end }) {
             const list = [...PRIZES].reverse().slice(start, end);
             return (
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-4 md:px-6">
                     <div className="w-full max-w-5xl transform -translate-y-4">
-                        <div className="mb-6 text-center animate-slide-up"><span className="text-3xl md:text-5xl font-bold text-orange-200 tracking-widest">獎品清單 Prize List</span></div>
+                        <div className="mb-6 text-center animate-slide-up"><span className="text-3xl md:text-5xl font-bold text-yellow-400 tracking-widest">獎品清單 Prize List</span></div>
                         <div className="grid grid-cols-1 gap-2 md:gap-3">
                             {list.map((p, i) => (
-                                <div key={i} className="flex items-center gap-4 bg-white/5 p-3 md:p-6 rounded-xl border border-white/10 shadow-lg">
-                                    <span className="text-xl md:text-4xl font-black text-emerald-500 min-w-[60px] md:min-w-[120px]">No. {p.id}</span>
-                                    <span className="text-lg md:text-3xl lg:text-4xl font-bold text-orange-100 leading-tight">{p.name}</span>
+                                <div key={i} className="flex items-center gap-4 bg-white/5 p-3 md:p-5 rounded-xl border border-white/10 shadow-lg">
+                                    <span className="text-xl md:text-4xl font-black text-yellow-500 min-w-[60px] md:min-w-[120px]">No. {p.id}</span>
+                                    <span className="text-lg md:text-3xl lg:text-4xl font-bold text-white leading-tight opacity-90">{p.name}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
             );
-        };
+        }
 
-        const BonusSlide = ({ isExtra }) => {
-            const items = useMemo(() => Array.from({ length: 45 }).map((_, i) => ({ 
+        function BonusSlide({ isExtra }) {
+            const bonusElements = useMemo(() => Array.from({ length: 45 }).map((_, i) => ({ 
                 id: i, top: Math.random()*95+'%', left: Math.random()*95+'%', 
                 size: Math.random()*6+2+'rem', rotate: Math.random()*80-40+'deg', delay: Math.random()*1.5+'s' 
             })), []);
             return (
                 <div className="absolute inset-0 z-20 overflow-hidden">
-                    {items.map(it => <div key={it.id} className="bonus-item absolute font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-300 to-red-600 opacity-40 select-none pointer-events-none" style={{ top: it.top, left: it.left, fontSize: it.size, transform: `rotate(${it.rotate})`, animationDelay: it.delay }}>{isExtra ? '再加碼！！' : '加碼！！'}</div>)}
+                    {bonusElements.map(it => <div key={it.id} className="bonus-item absolute font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-emerald-200 to-emerald-600 opacity-30 select-none pointer-events-none" style={{ top: it.top, left: it.left, fontSize: it.size, transform: `rotate(${it.rotate})`, animationDelay: it.delay }}>{isExtra ? '再加碼！！' : '加碼！！'}</div>)}
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="px-12 py-10 md:px-24 md:py-14 bg-black/60 backdrop-blur-3xl rounded-[40px] border-4 border-orange-500 text-center shadow-[0_0_100px_rgba(249,115,22,0.6)] transform scale-95 md:scale-110">
-                            <h2 className="text-7xl md:text-[14rem] font-black text-orange-500 italic animate-pulse whitespace-nowrap">{isExtra ? '再加碼！！' : '加碼！！'}</h2>
+                        <div className="px-12 py-10 md:px-24 md:py-14 bg-black/60 backdrop-blur-3xl rounded-[40px] border-4 border-emerald-500 text-center shadow-[0_0_100px_rgba(16,185,129,0.6)] transform scale-95 md:scale-110">
+                            <h2 className="text-7xl md:text-[14rem] font-black text-emerald-500 italic animate-pulse whitespace-nowrap">{isExtra ? '再加碼！！' : '加碼！！'}</h2>
                         </div>
                     </div>
                 </div>
             );
-        };
+        }
 
-        const OutroSlide = () => (
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 text-center animate-slide-up">
-                <div className="overflow-visible transform -translate-y-8 pr-12 md:pr-24">
-                    <h2 className="text-5xl md:text-[11rem] font-bold text-white tracking-widest mb-10 md:mb-14 italic drop-shadow-2xl whitespace-nowrap">感謝各位蒞臨</h2>
-                    <div className="space-y-6 mb-16 md:mb-24">
-                        <p className="text-3xl md:text-[6.5rem] font-bold text-orange-100/90 whitespace-nowrap tracking-[0.1em]">2026 冠恆集團春茗</p>
-                        <p className="text-3xl md:text-[6.5rem] font-bold text-orange-100/90 whitespace-nowrap tracking-[0.1em]">圓滿結束</p>
+        function OutroSlide() {
+            return (
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 text-center animate-slide-up">
+                    <div className="overflow-visible transform -translate-y-8 pr-10 md:pr-24">
+                        <h2 className="text-5xl md:text-[11rem] font-bold text-white tracking-widest mb-10 md:mb-14 italic drop-shadow-2xl whitespace-nowrap">感謝各位蒞臨</h2>
+                        <div className="space-y-4 md:space-y-6 mb-16 md:mb-24 opacity-90">
+                            <p className="text-3xl md:text-[6.5rem] font-bold text-white whitespace-nowrap tracking-wider">2026 冠恆集團春茗</p>
+                            <p className="text-3xl md:text-[6.5rem] font-bold text-white whitespace-nowrap tracking-wider">圓滿結束</p>
+                        </div>
+                        <h3 className="text-8xl md:text-[13rem] font-black text-yellow-400 italic animate-pulse drop-shadow-[0_0_60px_rgba(251,191,36,0.7)] py-8 whitespace-nowrap">下年再見!</h3>
                     </div>
-                    <h3 className="text-8xl md:text-[13rem] font-black text-yellow-400 italic animate-pulse drop-shadow-[0_0_60px_rgba(250,204,21,0.7)] py-8 whitespace-nowrap">下年再見!</h3>
                 </div>
-            </div>
-        );
+            );
+        }
 
         // --- 3. Main Application ---
 
@@ -374,6 +387,8 @@
             const [isReady, setIsReady] = useState(false);
             const [isZoomed, setIsZoomed] = useState(false);
             const [focusedImage, setFocusedImage] = useState(null);
+            const [welcomeRevealed, setWelcomeRevealed] = useState(false);
+            const audioRef = useRef(new Audio(LOCAL_BGM_PATH));
 
             const domeItems = useMemo(() => buildDomeStructure(PHOTO_ITEMS), []);
 
@@ -381,23 +396,23 @@
                 <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} focusedImage={focusedImage} />,
                 <SloganSlide />,
                 <MergedSpeechSlide />,
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 animate-slide-up text-center"><h2 className="text-6xl md:text-[9rem] font-bold text-orange-200/95 tracking-[0.15em] drop-shadow-2xl mb-4 leading-tight">長期服務獎</h2><span className="text-orange-400/60 text-2xl md:text-5xl font-light tracking-[0.4em] uppercase italic">Long Service Award</span></div>,
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 text-center animate-slide-up"><span className="text-orange-200/90 text-6xl md:text-[10rem] font-black tracking-widest drop-shadow-lg mb-12">10 Years</span><span className="text-5xl md:text-9xl font-medium text-orange-300 drop-shadow-2xl">David Tsang</span></div>,
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 text-center animate-slide-up"><span className="text-orange-200/90 text-6xl md:text-[10rem] font-black tracking-widest drop-shadow-lg mb-12">15 Years</span><span className="text-5xl md:text-9xl font-medium text-orange-300 drop-shadow-2xl">Kanji Kwok</span></div>,
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 text-center animate-slide-up"><span className="text-orange-200/90 text-6xl md:text-[10rem] font-black tracking-widest drop-shadow-lg mb-12">20 Years</span><div className="flex flex-col gap-6 md:gap-10"><span className="text-5xl md:text-9xl font-medium text-orange-300 drop-shadow-2xl">Kason Lau</span><span className="text-5xl md:text-9xl font-medium text-orange-300 drop-shadow-2xl">Steven Ngai</span></div></div>,
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 text-center animate-slide-up"><span className="text-orange-200/90 text-6xl md:text-[10rem] font-black tracking-widest drop-shadow-lg mb-12">25 Years</span><span className="text-5xl md:text-9xl font-medium text-orange-300 drop-shadow-2xl">Wilson Chang</span></div>,
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 animate-slide-up text-center"><h2 className="text-[15vw] md:text-[15rem] font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-yellow-200 via-emerald-400 to-emerald-600 drop-shadow-[0_20px_60px_rgba(16,185,129,0.5)] pr-8 md:pr-16 py-8 overflow-visible leading-none">GAME TIME!</h2></div>,
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 animate-slide-up text-center transform -translate-y-8"><div className="w-full flex justify-start mb-6 max-w-6xl"><span className="text-orange-300 text-2xl md:text-4xl font-bold ml-4 md:ml-16">唔係講笑...</span></div><h2 className="text-5xl md:text-[10rem] font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-b from-yellow-100 to-orange-400 leading-tight">今晚獎金、獎品<br />非常豐富！！</h2></div>,
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 animate-slide-up text-center"><span className="text-orange-300 text-3xl md:text-6xl font-bold tracking-[0.5em] mb-4">玩法</span><span className="text-white/40 uppercase tracking-[0.3em] text-sm md:text-2xl mb-12">How to Play</span><p className="text-2xl md:text-6xl font-bold text-orange-100 mb-6">被抽中的枱號，每人皆可獲得</p><span className="text-orange-400/50 uppercase text-lg md:text-3xl mb-16 tracking-wide">Every guest wins when their table number is drawn!</span><div className="flex flex-col items-center"><span className="text-7xl md:text-[14rem] font-black text-transparent bg-clip-text bg-gradient-to-b from-pink-300 to-blue-500 leading-none">豐富獎品</span><span className="text-blue-300/40 uppercase text-xl md:text-5xl mt-6">Fabulous Prizes</span><div className="mt-8 md:mt-12 px-12 py-4 bg-white/5 border border-white/10 rounded-2xl shadow-xl"><span className="text-2xl md:text-6xl font-bold text-emerald-400 tracking-widest">個人護理及小家電</span></div></div></div>,
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 animate-slide-up text-center"><h2 className="text-6xl md:text-[9rem] font-bold text-white tracking-[0.15em] drop-shadow-2xl mb-4 leading-tight">長期服務獎</h2><span className="text-emerald-500/80 text-2xl md:text-5xl font-light tracking-[0.4em] uppercase italic">Long Service Award</span></div>,
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 text-center animate-slide-up"><span className="text-white text-6xl md:text-[10rem] font-black tracking-widest drop-shadow-lg mb-12 opacity-90">10 Years</span><span className="text-5xl md:text-9xl font-medium text-emerald-400 drop-shadow-2xl">David Tsang</span></div>,
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 text-center animate-slide-up"><span className="text-white text-6xl md:text-[10rem] font-black tracking-widest drop-shadow-lg mb-12 opacity-90">15 Years</span><span className="text-5xl md:text-9xl font-medium text-emerald-400 drop-shadow-2xl">Kanji Kwok</span></div>,
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 text-center animate-slide-up"><span className="text-white text-6xl md:text-[10rem] font-black tracking-widest drop-shadow-lg mb-12 opacity-90">20 Years</span><div className="flex flex-col gap-6 md:gap-10"><span className="text-5xl md:text-9xl font-medium text-emerald-400 drop-shadow-2xl">Kason Lau</span><span className="text-5xl md:text-9xl font-medium text-emerald-400 drop-shadow-2xl">Steven Ngai</span></div></div>,
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 text-center animate-slide-up"><span className="text-white text-6xl md:text-[10rem] font-black tracking-widest drop-shadow-lg mb-12 opacity-90">25 Years</span><span className="text-5xl md:text-9xl font-medium text-emerald-400 drop-shadow-2xl">Wilson Chang</span></div>,
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 animate-slide-up text-center"><h2 className="text-[15vw] md:text-[15rem] font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-yellow-400 to-white drop-shadow-[0_20px_60px_rgba(16,185,129,0.5)] pr-8 md:pr-16 py-8 overflow-visible leading-none">GAME TIME!</h2></div>,
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 animate-slide-up text-center transform -translate-y-8"><div className="w-full flex justify-start mb-6 max-w-6xl"><span className="text-yellow-500 text-2xl md:text-4xl font-bold ml-4 md:ml-16">唔係講笑...</span></div><h2 className="text-6xl md:text-[10rem] font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-b from-white via-yellow-200 to-white leading-tight">今晚獎金、獎品<br />非常豐富！！</h2></div>,
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 animate-slide-up text-center"><span className="text-yellow-500 text-3xl md:text-6xl font-bold tracking-[0.5em] mb-4">玩法</span><span className="text-white/40 uppercase tracking-[0.3em] text-sm md:text-2xl mb-12">How to Play</span><p className="text-2xl md:text-6xl font-bold text-white mb-6">被抽中的枱號，每人皆可獲得</p><span className="text-white/50 uppercase text-lg md:text-3xl mb-16 tracking-wide">Every guest wins when their table number is drawn!</span><div className="flex flex-col items-center"><span className="text-7xl md:text-[14rem] font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-emerald-500 leading-none">豐富獎品</span><span className="text-white/40 uppercase text-xl md:text-4xl mt-6">Fabulous Prizes</span><div className="mt-8 md:mt-12 px-12 py-4 bg-white/5 border border-white/10 rounded-2xl shadow-xl"><span className="text-2xl md:text-6xl font-bold text-yellow-400 tracking-widest">個人護理及小家電</span></div></div></div>,
                 <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} focusedImage={focusedImage} />,
                 <CompetitionSlide />,
                 <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} focusedImage={focusedImage} />,
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 animate-slide-up"><div className="w-full max-w-6xl transform -translate-y-8"><div className="flex justify-between items-end mb-12 border-b border-white/10 pb-4"><span className="text-orange-200/90 text-3xl md:text-6xl font-bold">Game 3</span><span className="text-orange-300 text-6xl md:text-[11rem] font-black italic drop-shadow-2xl">BINGO!</span></div><div className="space-y-8 md:space-y-12 pl-6 border-l-4 border-emerald-500/50"><div className="flex items-center gap-6"><div className="w-12 h-12 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black">1</div><p className="text-2xl md:text-5xl font-bold text-orange-100">每人手上已有一張「六合彩飛」</p></div><div className="flex items-center gap-6"><div className="w-12 h-12 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black">2</div><p className="text-2xl md:text-5xl font-bold text-orange-100">嘉賓會從 1 - 49 號中抽數字</p></div><div className="flex items-center gap-6"><div className="w-12 h-12 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black">3</div><p className="text-2xl md:text-5xl font-bold text-orange-100">最快凑成 <span className="text-emerald-400 text-5xl md:text-7xl px-2">4</span> 組號碼</p></div><div className="p-6 bg-red-600/10 border-2 border-red-500/30 rounded-2xl mt-10 shadow-2xl"><p className="text-xl md:text-4xl font-black text-red-500 tracking-wider">名額只有五個，記得盡快舉手行出嚟喇！</p></div></div></div></div>,
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 animate-slide-up"><div className="w-full max-w-6xl transform -translate-y-8"><div className="flex justify-between items-end mb-12 border-b border-white/10 pb-4"><span className="text-orange-200/90 text-3xl md:text-6xl font-bold">Game 3</span><span className="text-white text-6xl md:text-[11rem] font-black italic drop-shadow-2xl">BINGO!</span></div><div className="space-y-8 md:space-y-12 pl-6 border-l-4 border-emerald-500/50"><div className="flex items-center gap-6"><div className="w-12 h-12 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-xl">1</div><p className="text-2xl md:text-5xl font-bold text-white">每人手上已有一張「六合彩飛」</p></div><div className="flex items-center gap-6"><div className="w-12 h-12 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-xl">2</div><p className="text-2xl md:text-5xl font-bold text-white">嘉賓會從 1 - 49 號中抽數字</p></div><div className="flex items-center gap-6"><div className="w-12 h-12 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-xl">3</div><p className="text-2xl md:text-5xl font-bold text-white">最快凑成 <span className="text-emerald-400 text-5xl md:text-7xl px-2 font-black">4</span> 組號碼</p></div><div className="p-6 bg-red-600/10 border-2 border-red-500/30 rounded-2xl mt-10 shadow-2xl"><p className="text-xl md:text-4xl font-black text-red-500 tracking-wider">名額只有五個，記得盡快舉手行出嚟喇！</p></div></div></div></div>,
                 <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} focusedImage={focusedImage} />,
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 text-center animate-slide-up"><h2 className="text-8xl md:text-[15rem] font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-orange-600 leading-none py-8">抽獎環節</h2><span className="text-orange-200/40 text-4xl md:text-7xl font-light uppercase mt-6 italic">Lucky Draw Session</span><div className="mt-16 px-16 py-8 bg-white/10 rounded-full border border-white/20 shadow-2xl"><span className="text-3xl md:text-6xl font-bold text-emerald-400">共有 12 個獲獎名額</span></div></div>,
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 text-center animate-slide-up"><h2 className="text-8xl md:text-[15rem] font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-emerald-200 to-white leading-none py-8">抽獎環節</h2><span className="text-white/60 text-4xl md:text-7xl font-light uppercase mt-6 italic">Lucky Draw Session</span><div className="mt-16 px-16 py-8 bg-white/10 rounded-full border border-white/20 shadow-2xl"><span className="text-3xl md:text-6xl font-bold text-yellow-400">共有 12 個獲獎名額</span></div></div>,
                 <PrizeListSlide start={0} end={6} />,
                 <PrizeListSlide start={6} end={12} />,
-                ...[...PRIZES].reverse().map(p => <div key={`draw-${p.id}`} className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 animate-slide-up"><div className="watermark-text" style={{fontSize:'35vw', top:'0%'}}>{p.id}</div><div className="flex items-center gap-10 mb-16 relative"><span className="text-6xl md:text-[14rem] font-black text-emerald-500 drop-shadow-2xl">No. {p.id}</span><div className="h-24 md:h-56 w-[2px] bg-white/20"/><span className="text-3xl md:text-7xl font-bold text-orange-300 opacity-60 italic">Lucky Draw</span></div><div className="px-8 py-8 md:px-14 md:py-12 bg-white/5 backdrop-blur-3xl rounded-[30px] border-2 border-orange-400/30 text-center w-full max-w-7xl shadow-2xl"><h2 className="text-4xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-orange-200 drop-shadow-2xl">{p.name}</h2></div></div>),
+                ...[...PRIZES].reverse().map(p => <div key={`draw-${p.id}`} className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 animate-slide-up"><div className="watermark-text" style={{fontSize:'35vw', top:'0%'}}>{p.id}</div><div className="flex items-center gap-10 mb-16 relative"><span className="text-6xl md:text-[14rem] font-black text-emerald-500 drop-shadow-2xl">No. {p.id}</span><div className="h-24 md:h-56 w-[2px] bg-white/20"/><span className="text-3xl md:text-7xl font-bold text-white opacity-40 italic">Lucky Draw</span></div><div className="px-8 py-8 md:px-14 md:py-12 bg-white/5 backdrop-blur-3xl rounded-[30px] border-2 border-white/20 text-center w-full max-w-7xl shadow-2xl"><h2 className="text-4xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white drop-shadow-2xl">{p.name}</h2></div></div>),
                 <BonusSlide key="b-1" isExtra={false} />, 
                 <BonusSlide key="b-2" isExtra={true} />,
                 <OutroSlide />
@@ -406,36 +421,33 @@
             useEffect(() => {
                 let loaded = 0;
                 const urls = Array.from(new Set(domeItems.map(it => it.src)));
-                
-                // 強制結束計時器 (10s)
-                const forceStart = setTimeout(() => {
-                  if (!isReady) {
-                    const pre = document.getElementById('preloader');
-                    if (pre) pre.style.opacity = '0';
-                    setTimeout(() => { if (pre) pre.style.display = 'none'; setIsReady(true); }, 1000);
-                  }
-                }, 10000);
+                const forceStart = setTimeout(() => { if (!isReady) { finishLoading(); } }, 15000);
 
                 const checkFinish = () => {
                   loaded++;
                   const fill = document.getElementById('loader-fill');
-                  if (fill) fill.style.width = Math.min((loaded/urls.length)*100, 100) + '%';
-                  if (loaded >= urls.length) {
-                    clearTimeout(forceStart);
-                    setTimeout(() => {
-                      const pre = document.getElementById('preloader');
-                      if (pre) pre.style.opacity = '0';
-                      setTimeout(() => { if (pre) pre.style.display = 'none'; setIsReady(true); }, 1000);
-                    }, 500);
-                  }
+                  if (fill) fill.style.width = Math.min((loaded/(urls.length + 1))*100, 100) + '%';
+                  if (loaded >= urls.length + 1) { clearTimeout(forceStart); finishLoading(); }
                 };
 
+                const finishLoading = () => {
+                   const pre = document.getElementById('preloader');
+                   if (pre) pre.style.opacity = '0';
+                   setTimeout(() => { if (pre) pre.style.display = 'none'; setIsReady(true); }, 1000);
+                };
+
+                // Preload Images
                 urls.forEach(url => {
                     const img = new Image();
                     img.src = url;
                     img.onload = checkFinish;
                     img.onerror = checkFinish;
                 });
+
+                // Preload Audio
+                audioRef.current.oncanplaythrough = checkFinish;
+                audioRef.current.onerror = checkFinish;
+                audioRef.current.load();
 
                 return () => clearTimeout(forceStart);
             }, [domeItems]);
@@ -444,22 +456,42 @@
 
             return (
                 <div className="relative w-full h-screen bg-[#010401] overflow-hidden select-none animate-fade-in">
-                    <div className="fixed top-4 right-4 md:top-8 md:right-8 z-[100] flex items-center gap-4">
-                        <BackgroundMusic />
+                    <div 
+                        className={`welcome-overlay ${welcomeRevealed ? 'revealed' : ''}`}
+                        onClick={() => {
+                            setWelcomeRevealed(true);
+                            audioRef.current.loop = true;
+                            audioRef.current.play().catch(()=>{});
+                        }}
+                    >
+                        <div className="flex flex-col items-center gap-6 anim-phase-1">
+                             <div className="text-white text-3xl md:text-6xl font-bold tracking-[0.2em] mb-4 opacity-80">WELCOME TO</div>
+                             <img src="LOGO.PNG" alt="LOGO" className="w-full max-w-2xl px-10 h-auto object-contain drop-shadow-[0_0_40px_rgba(255,255,255,0.3)]" />
+                             <div className="text-emerald-500 text-xl md:text-3xl mt-10 animate-pulse tracking-[0.3em]">TAP TO ENTER CEREMONY</div>
+                        </div>
                     </div>
-                    <div className="absolute inset-0 z-1 pointer-events-none opacity-60"><div className="aurora-fluid aurora-v1"/><div className="aurora-fluid aurora-v2"/><div className="aurora-fluid aurora-v3"/></div>
+
+                    <div className="fixed top-4 right-4 md:top-8 md:right-8 z-[100] flex items-center gap-4">
+                        <BackgroundMusic audio={audioRef.current} />
+                    </div>
+                    
+                    <div className="absolute inset-0 z-0 pointer-events-none opacity-100">
+                        <div className="aurora-fluid aurora-v1"/>
+                        <div className="aurora-fluid aurora-v2"/>
+                        <div className="aurora-fluid aurora-white"/>
+                    </div>
                     
                     {allSlides[slide]}
 
                     <div className="fixed bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4">
-                        <button onClick={()=>setSlide(p=>Math.max(0,p-1))} className="p-4 bg-white/5 md:bg-white/10 rounded-full border border-white/20 active:bg-emerald-500/40"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                        <div className="flex gap-1.5 flex-wrap justify-center max-w-[200px] md:max-w-[800px]">{allSlides.map((_,i)=><div key={i} className={`w-1 h-1 md:w-1.5 md:h-1.5 rounded-full transition-all ${slide===i ? 'bg-emerald-400 w-3 md:w-6' : 'bg-white/10'}`}/>)}</div>
-                        <button onClick={()=>setSlide(p=>Math.min(allSlides.length-1,p+1))} className="p-4 bg-white/5 md:bg-white/10 rounded-full border border-white/20 active:bg-emerald-500/40"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                        <button onClick={()=>setSlide(p=>Math.max(0,p-1))} className="p-4 bg-white/5 md:bg-white/10 rounded-full border border-white/20 active:bg-emerald-500/40 transition-all"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                        <div className="flex gap-1.5 flex-wrap justify-center max-w-[200px] md:max-w-[800px]">{allSlides.map((_,i)=><div key={i} className={`w-1 h-1 md:w-1.5 md:h-1.5 rounded-full transition-all ${slide===i ? 'bg-emerald-400 w-3' : 'bg-white/10'}`}/>)}</div>
+                        <button onClick={()=>setSlide(p=>Math.min(allSlides.length-1,p+1))} className="p-4 bg-white/5 md:bg-white/10 rounded-full border border-white/20 active:bg-emerald-500/40 transition-all"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                     </div>
                     
                     {isZoomed && focusedImage && (
                         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/98 backdrop-blur-3xl p-4">
-                            <div className={`relative max-w-[95vw] max-h-[85vh] md:max-w-6xl md:max-h-[85vh] shadow-2xl rounded-[24px] md:rounded-[32px] border border-white/10 overflow-hidden ${isZoomed ? 'zoom-in-container' : 'zoom-out-container'}`}>
+                            <div className={`relative max-w-[95vw] max-h-[85vh] md:max-w-6xl md:max-h-[85vh] shadow-2xl rounded-[24px] md:rounded-[32px] border border-white/10 overflow-hidden zoom-in-container`}>
                                 <img src={focusedImage.src} className="block w-full h-full object-contain" />
                             </div>
                         </div>
@@ -468,25 +500,16 @@
             );
         }
 
-        const BackgroundMusic = () => {
-            const [isPlaying, setIsPlaying] = useState(false);
-            const playerRef = useRef(null);
-            useEffect(() => {
-                window.onYouTubeIframeAPIReady = () => {
-                    playerRef.current = new YT.Player('youtube-player', { height: '0', width: '0', videoId: YOUTUBE_VIDEO_ID, playerVars: { autoplay: 1, loop: 1, playlist: YOUTUBE_VIDEO_ID, controls: 0 }, events: { onReady: (e) => { e.target.mute(); e.target.playVideo(); } } });
-                };
-                if (window.YT && window.YT.Player) window.onYouTubeIframeAPIReady();
-            }, []);
+        function BackgroundMusic({ audio }) {
+            const [isPlaying, setIsPlaying] = useState(true);
             const toggle = () => {
-                if (!playerRef.current) return;
-                if (isPlaying) playerRef.current.mute(); else { playerRef.current.unMute(); playerRef.current.setVolume(50); }
+                if (isPlaying) audio.pause(); else audio.play();
                 setIsPlaying(!isPlaying);
             };
             return (
                 <button onClick={toggle} className="p-3 bg-white/10 hover:bg-emerald-500/30 border border-white/20 rounded-full transition-all flex items-center gap-3 shadow-2xl">
-                    <div id="youtube-player" className="hidden"></div>
                     {isPlaying && <div className="flex items-end h-4">{[0,0.2,0.4,0.1].map((d,i)=><div key={i} className="music-bar" style={{animationDelay:`${d}s`}}/>)}</div>}
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">{isPlaying ? <path d="M9 18V5l12-2v13"></path> : <line x1="1" y1="1" x2="23" y2="23"></line>}</svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400">{isPlaying ? <path d="M9 18V5l12-2v13"></path> : <line x1="1" y1="1" x2="23" y2="23"></line>}</svg>
                 </button>
             );
         };
