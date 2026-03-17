@@ -41,7 +41,6 @@
             transition: width 0.3s ease;
         }
 
-        /* 經典深綠北極光 */
         .aurora-fluid { 
             position: absolute; 
             width: 140vw; height: 140vh; 
@@ -60,7 +59,6 @@
             100% { transform: translate(-5%,10%) rotate(-5deg); }
         }
 
-        /* 高級白金漸變文字 */
         .text-white-gold {
             background: linear-gradient(to bottom, #ffffff 0%, #fef3c7 45%, #fbbf24 100%);
             -webkit-background-clip: text;
@@ -68,20 +66,17 @@
             filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
         }
 
-        /* 閃耀黃金標籤動畫 */
         .gold-shiny-tag {
             background: linear-gradient(110deg, #d97706 0%, #fbbf24 45%, #fef3c7 50%, #fbbf24 55%, #d97706 100%);
             background-size: 200% 100%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: shine 3s linear infinite;
-            filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.4));
         }
         @keyframes shine {
             to { background-position: 200% center; }
         }
 
-        /* 誇張化紫色大字 (Game 1) */
         .text-exaggerated-purple {
             background: linear-gradient(to bottom, #f0abfc, #a855f7, #6366f1);
             -webkit-background-clip: text;
@@ -89,7 +84,6 @@
             filter: drop-shadow(0 0 30px rgba(168, 85, 247, 0.6));
         }
 
-        /* GAME TIME! 翡翠白發光 */
         .text-emerald-glow {
             background: linear-gradient(to bottom, #ffffff, #6ee7b7, #10b981);
             -webkit-background-clip: text;
@@ -155,7 +149,7 @@
 
         // --- 1. 配置數據 ---
         const BGM_WELCOME = 'music/welcoming.mp3';
-        const BGM_BOSS = 'music/bossentry.mp3'; 
+        const BGM_BOSS = 'music/bosssentry.mp3'; 
         const BGM_MISS_HK = 'music/misshk.mp3';
 
         const PHOTO_IDS = [
@@ -223,33 +217,32 @@
                 return () => window.removeEventListener('resize', handleResize);
             }, []);
 
-            // 修復後的自動縮放邏輯
             useEffect(() => {
                 if (isZoomed) {
-                    const timer = setTimeout(() => {
-                        setIsZoomed(false);
-                    }, 6000); // 6秒後縮回
+                    const timer = setTimeout(() => setIsZoomed(false), 6000);
                     return () => clearTimeout(timer);
                 } else {
                     const cycleTimer = setTimeout(() => {
                         const randomImg = items[Math.floor(Math.random() * items.length)];
                         setFocusedImage(randomImg);
                         setIsZoomed(true);
-                    }, 5000); // 每5秒嘗試放大一張
+                    }, 5000);
                     return () => clearTimeout(cycleTimer);
                 }
             }, [isZoomed, items]);
 
+            // 修正：使用恆定速度，不隨時間或渲染累計加速
             useEffect(() => {
+                let rafId;
                 const animate = () => {
                     if (!isZoomed && stageRef.current) {
-                        rotationRef.current += 0.12; 
+                        rotationRef.current += 0.1; // 保持每幀固定的增加值
                         stageRef.current.style.transform = `translate3d(0, 0, ${-radius}px) rotateY(${rotationRef.current}deg)`;
                     }
-                    requestAnimationFrame(animate);
+                    rafId = requestAnimationFrame(animate);
                 };
-                const raf = requestAnimationFrame(animate);
-                return () => cancelAnimationFrame(raf);
+                rafId = requestAnimationFrame(animate);
+                return () => cancelAnimationFrame(rafId);
             }, [isZoomed, radius]);
 
             return (
@@ -276,10 +269,10 @@
             return (
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-4 text-center">
                     <div className="flex flex-col items-center w-full transform -translate-y-4 md:-translate-y-12 relative">
-                        <img src="Logo.png" alt="Logo" className="w-full max-w-[95vw] md:max-w-4xl h-auto object-contain drop-shadow-2xl anim-phase-1 relative z-50" />
+                        <img src="Logo.png" alt="Logo" className="w-full max-w-[95vw] md:max-w-5xl h-auto object-contain drop-shadow-2xl anim-phase-1 relative z-50" />
                         <div className="anim-phase-1 mt-6">
-                            <h1 className="text-4xl md:text-8xl font-light tracking-[0.15em] text-white-gold leading-tight drop-shadow-lg">ANNUAL DINNER</h1>
-                            <div className="flex items-center gap-4 mt-2 justify-center"><span className="text-emerald-400 text-xl md:text-3xl font-medium tracking-[0.5em]">2 0 2 5</span></div>
+                            <h1 className="text-4xl md:text-7xl font-light tracking-[0.15em] text-white-gold leading-tight drop-shadow-lg">ANNUAL DINNER</h1>
+                            <div className="flex items-center gap-4 mt-2 justify-center"><span className="text-orange-300 text-xl md:text-3xl font-medium tracking-[0.5em]">2 0 2 5</span></div>
                         </div>
                         <div className="anim-phase-2 flex flex-col gap-3 mt-10 md:mt-16 w-full">
                             <span className="text-[8.5vw] md:text-[5.5rem] font-black text-white-gold tracking-[0.1em] drop-shadow-2xl whitespace-nowrap">冠世風華廿二載</span>
@@ -290,8 +283,44 @@
             );
         }
 
-        function MergedSpeechSlide() {
-            return (
+        function App() {
+            const [slide, setSlide] = useState(0);
+            const [isReady, setIsReady] = useState(false);
+            const [isZoomed, setIsZoomed] = useState(false);
+            const [focusedImage, setFocusedImage] = useState(null);
+            
+            const audioWelcome = useRef(new Audio(BGM_WELCOME));
+            const audioBoss = useRef(new Audio(BGM_BOSS));
+            const audioMissHK = useRef(new Audio(BGM_MISS_HK));
+
+            const currentBgmRef = useRef(null);
+            const domeItems = useMemo(() => buildDomeStructure(PHOTO_ITEMS), []);
+
+            // 優化的音樂控制邏輯
+            useEffect(() => {
+                if (!isReady) return;
+
+                let nextBgm = null;
+                if (slide === 0 || slide === 1) nextBgm = audioWelcome.current;
+                else if (slide === 2) nextBgm = audioBoss.current;
+                else if (slide >= 3 && slide <= 7) nextBgm = audioMissHK.current;
+
+                if (currentBgmRef.current !== nextBgm) {
+                    if (currentBgmRef.current) {
+                        currentBgmRef.current.pause();
+                        currentBgmRef.current.currentTime = 0;
+                    }
+                    if (nextBgm) {
+                        nextBgm.loop = true;
+                        nextBgm.play().catch(()=>{});
+                    }
+                    currentBgmRef.current = nextBgm;
+                }
+            }, [slide, isReady]);
+
+            const allSlides = [
+                <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} focusedImage={focusedImage} />,
+                <SloganSlide />,
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6">
                     <div className="flex flex-col md:flex-row items-center justify-center w-full max-w-7xl transform -translate-y-8 gap-8 md:gap-[100px]">
                         <div className="anim-phase-1 flex flex-col items-center text-center w-[250px]">
@@ -303,88 +332,11 @@
                         </div>
                         <div className="anim-speech-names flex flex-col items-center md:items-start gap-8 md:gap-[5cm]">
                             <span className="text-[10vw] md:text-7xl lg:text-8xl font-medium text-white drop-shadow-2xl whitespace-nowrap">Morris & Mikey</span>
-                            <div className="h-[2px] w-32 md:hidden bg-white/20 my-2" />
+                            <div className="h-[2px] w-20 md:hidden bg-white/20 my-2" />
                             <span className="text-[10vw] md:text-7xl lg:text-8xl font-medium text-white drop-shadow-2xl whitespace-nowrap">Teddy & Kanji</span>
                         </div>
                     </div>
-                </div>
-            );
-        }
-
-        function CompetitionSlide() {
-            const groupData = { g1: "2, 5, 8, 11, 15, 18", g2: "1, 6, 9, 12, 16, 19", g3: "3, 7, 10, 13, 17" };
-            const [revealed, setRevealed] = useState({ g1: false, g2: false, g3: false });
-            return (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-4 md:px-6">
-                    <div className="w-full max-w-7xl transform -translate-y-4 md:-translate-y-8">
-                        <div className="w-full flex justify-between items-end mb-6 md:mb-12 border-b border-white/10 pb-4">
-                            <span className="text-emerald-500 text-2xl md:text-6xl font-bold tracking-wide">Game 2</span>
-                            <span className="text-white text-4xl md:text-8xl font-bold uppercase">競飲</span>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-14 mb-8">
-                            {['g1','g2','g3'].map((id, idx) => (
-                                <div key={id} className="flex flex-col items-center">
-                                    <div onClick={() => setRevealed(p=>({...p, [id]:true}))} className={`w-full bg-white/5 border border-white/10 p-5 md:p-8 rounded-xl cursor-pointer transition-all duration-1000 ${revealed[id] ? 'blur-0 bg-white/10 shadow-[0_0_30px_rgba(16,185,129,0.2)]' : 'blur-2xl'}`}>
-                                        <span className="block text-yellow-500 font-bold mb-3 text-lg md:text-2xl uppercase">Group {idx+1}</span>
-                                        <p className="text-white text-2xl md:text-4xl font-black">{groupData[id]}</p>
-                                    </div>
-                                    <div className="mt-4 text-emerald-500 animate-bounce text-2xl md:text-4xl">↓</div>
-                                    <div className="w-full bg-white/5 border border-white/20 py-2 md:py-4 rounded-lg text-center mt-2 md:mt-0 shadow-lg"><span className="text-xl md:text-2xl font-black text-white uppercase opacity-80">晉級</span></div>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="flex justify-center mt-6">
-                            <div className="px-10 py-5 md:px-32 md:py-10 bg-gradient-to-r from-emerald-600/40 via-emerald-400/40 to-emerald-600/40 border-2 border-emerald-400/60 rounded-2xl shadow-[0_0_80px_rgba(16,185,129,0.3)] text-center">
-                                <span className="text-3xl md:text-8xl font-bold text-white tracking-widest drop-shadow-2xl">冠・亞・季</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        // --- 3. 主應用程序 ---
-
-        function App() {
-            const [slide, setSlide] = useState(0);
-            const [isReady, setIsReady] = useState(false);
-            const [isZoomed, setIsZoomed] = useState(false);
-            const [focusedImage, setFocusedImage] = useState(null);
-            
-            // 音效 Ref
-            const audioWelcome = useRef(new Audio(BGM_WELCOME));
-            const audioBoss = useRef(new Audio(BGM_BOSS));
-            const audioMissHK = useRef(new Audio(BGM_MISS_HK));
-
-            const domeItems = useMemo(() => buildDomeStructure(PHOTO_ITEMS), []);
-
-            // 音效控制邏輯
-            useEffect(() => {
-                if (!isReady) return;
-
-                // 停止所有
-                [audioWelcome, audioBoss, audioMissHK].forEach(a => {
-                    a.current.pause();
-                    a.current.currentTime = 0;
-                });
-
-                // 根據分頁播放
-                if (slide === 0 || slide === 1) {
-                    audioWelcome.current.loop = true;
-                    audioWelcome.current.play().catch(()=>{});
-                } else if (slide === 2) {
-                    audioBoss.current.loop = true;
-                    audioBoss.current.play().catch(()=>{});
-                } else if (slide >= 3 && slide <= 7) {
-                    audioMissHK.current.loop = true;
-                    audioMissHK.current.play().catch(()=>{});
-                }
-            }, [slide, isReady]);
-
-            const allSlides = [
-                <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} focusedImage={focusedImage} />,
-                <SloganSlide />,
-                <MergedSpeechSlide />,
+                </div>,
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 animate-slide-up text-center"><h2 className="text-6xl md:text-[9rem] font-bold text-white-gold tracking-[0.15em] drop-shadow-2xl mb-4 leading-tight">長期服務獎</h2><span className="text-emerald-500/80 text-2xl md:text-5xl font-light tracking-[0.4em] uppercase italic">Long Service Award</span></div>,
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 text-center animate-slide-up"><span className="text-white-gold text-6xl md:text-[10rem] font-black tracking-widest drop-shadow-lg mb-12 opacity-90">10 Years</span><span className="text-5xl md:text-9xl font-medium text-white drop-shadow-2xl">David Tsang</span></div>,
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 text-center animate-slide-up"><span className="text-white-gold text-6xl md:text-[10rem] font-black tracking-widest drop-shadow-lg mb-12 opacity-90">15 Years</span><span className="text-5xl md:text-9xl font-medium text-white drop-shadow-2xl">Kanji Kwok</span></div>,
@@ -395,41 +347,62 @@
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 animate-slide-up">
                     <div className="w-full max-w-6xl transform -translate-y-8">
                         <div className="flex justify-between items-end mb-10 border-b border-white/10 pb-4">
-                            <span className="text-emerald-400 text-2xl md:text-5xl font-bold tracking-widest uppercase">Game 1</span>
-                            <span className="text-white text-5xl md:text-8xl font-black drop-shadow-2xl">被抽中的枱號</span>
+                            <span className="text-emerald-400 text-2xl md:text-4xl font-bold tracking-widest uppercase">Game 1</span>
+                            <span className="text-white text-3xl md:text-5xl font-black drop-shadow-2xl">被抽中的枱號</span>
                         </div>
-                        <div className="flex flex-col items-center text-center gap-6">
-                            <p className="text-3xl md:text-5xl font-bold text-white opacity-90">被抽中的枱號，每人皆可獲得</p>
-                            <p className="text-xl md:text-2xl text-white/40 uppercase tracking-[0.2em] -mt-4">Every guest wins when their table number is drawn!</p>
+                        <div className="flex flex-col items-center text-center gap-4">
+                            <p className="text-2xl md:text-4xl font-bold text-white opacity-90">被抽中的枱號，每人皆可獲得</p>
+                            <p className="text-lg md:text-xl text-white/40 uppercase tracking-[0.2em]">Every guest wins when their table number is drawn!</p>
                             <div className="mt-6 flex flex-col items-center gap-4">
-                                <span className="text-exaggerated-purple font-black leading-none">豐富獎品</span>
-                                <span className="text-purple-400/60 text-2xl md:text-4xl uppercase tracking-[0.3em] -mt-2">Fabulous Prizes</span>
-                                <div className="mt-10 px-16 py-6 bg-white/5 border border-white/10 rounded-2xl shadow-[0_0_40px_rgba(251,191,36,0.3)]">
-                                    <span className="gold-shiny-tag text-3xl md:text-6xl font-black tracking-widest">個人護理及小家電</span>
+                                <span className="text-exaggerated-purple font-black leading-none text-7xl md:text-[12rem] drop-shadow-[0_0_40px_rgba(168,85,247,0.7)]">豐富獎品</span>
+                                <span className="text-purple-400/60 text-xl md:text-3xl uppercase tracking-[0.3em] -mt-2">Fabulous Prizes</span>
+                                <div className="mt-12 px-20 py-8 bg-white/5 border-2 border-white/10 rounded-[40px] shadow-[0_0_60px_rgba(251,191,36,0.4)]">
+                                    <span className="gold-shiny-tag text-4xl md:text-8xl font-black tracking-widest">個人護理及小家電</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>,
                 <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} focusedImage={focusedImage} />,
-                <CompetitionSlide />,
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-4 md:px-6">
+                    <div className="w-full max-w-7xl transform -translate-y-4 md:-translate-y-8">
+                        <div className="w-full flex justify-between items-end mb-6 md:mb-12 border-b border-white/10 pb-4">
+                            <span className="text-emerald-400 text-2xl md:text-6xl font-bold tracking-wide">Game 2</span>
+                            <span className="text-white text-4xl md:text-8xl font-bold uppercase">競飲</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 items-stretch">
+                            {['g1','g2','g3'].map((id, idx) => {
+                                const groupData = { g1: "2, 5, 8, 11, 15, 18", g2: "1, 6, 9, 12, 16, 19", g3: "3, 7, 10, 13, 17" };
+                                const [rev, setRev] = useState(false);
+                                return (
+                                    <div key={id} className="flex flex-col h-full">
+                                        <div onClick={() => setRev(true)} className={`flex-grow bg-white/5 border border-white/10 p-8 rounded-xl cursor-pointer transition-all duration-1000 ${rev ? 'blur-0 bg-white/10 shadow-[0_0_30px_rgba(16,185,129,0.2)]' : 'blur-2xl'}`}>
+                                            <span className="block text-yellow-500 font-bold mb-3 text-lg md:text-2xl uppercase">Group {idx+1}</span>
+                                            <p className="text-white text-2xl md:text-4xl font-black">{groupData[id]}</p>
+                                        </div>
+                                        <div className="mt-4 text-emerald-500 animate-bounce flex justify-center text-3xl">↓</div>
+                                        <div className="w-full bg-white/5 border border-white/20 py-4 rounded-lg text-center mt-2 shadow-lg"><span className="text-xl font-black text-white uppercase opacity-80">晉級</span></div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="flex justify-center mt-8">
+                            <div className="px-10 py-5 md:px-32 md:py-10 bg-gradient-to-r from-emerald-600/40 via-emerald-400/40 to-emerald-600/40 border-2 border-emerald-400/60 rounded-2xl shadow-[0_0_80px_rgba(16,185,129,0.3)] text-center"><span className="text-3xl md:text-8xl font-bold text-white tracking-widest drop-shadow-2xl">冠・亞・季</span></div>
+                        </div>
+                    </div>
+                </div>,
                 <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} focusedImage={focusedImage} />,
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 animate-slide-up">
                     <div className="w-full max-w-6xl transform -translate-y-8">
                         <div className="flex justify-between items-end mb-10 border-b border-white/10 pb-4">
                             <span className="text-emerald-400 text-2xl md:text-5xl font-bold uppercase tracking-widest">Game 3</span>
-                            <div className="flex flex-col items-end">
-                                <span className="text-white text-5xl md:text-8xl font-black drop-shadow-2xl">Bingo!</span>
-                                <span className="text-white/40 text-xl md:text-2xl uppercase tracking-[0.2em]">Bingo Challenge</span>
-                            </div>
+                            <div className="flex flex-col items-end"><span className="text-white text-5xl md:text-8xl font-black drop-shadow-2xl">Bingo!</span><span className="text-white/40 text-xl md:text-2xl uppercase tracking-[0.2em]">Bingo Challenge</span></div>
                         </div>
                         <div className="space-y-6 md:space-y-12 pl-6 border-l-4 border-emerald-500/50">
                             <div className="flex items-center gap-6"><div className="w-10 h-10 md:w-14 md:h-14 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-xl">1</div><p className="text-xl md:text-5xl font-bold text-white leading-tight">每人手上已有一張「六合彩飛」</p></div>
                             <div className="flex items-center gap-6"><div className="w-10 h-10 md:w-14 md:h-14 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-xl">2</div><p className="text-xl md:text-5xl font-bold text-white leading-tight">會從 1 - 49 號中抽數字</p></div>
                             <div className="flex items-center gap-6"><div className="w-10 h-10 md:w-14 md:h-14 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-xl">3</div><p className="text-xl md:text-5xl font-bold text-white leading-tight">最快湊成 <span className='text-emerald-400 font-black'>4</span> 組號碼</p></div>
-                            <div className="p-4 md:p-10 bg-red-600/20 border-2 border-red-500/30 rounded-2xl mt-10 shadow-2xl">
-                                <p className="text-lg md:text-4xl font-black text-red-500 tracking-wider">名額只有五個，記得盡快舉手行出嚟喇！</p>
-                            </div>
+                            <div className="p-4 md:p-10 bg-red-600/20 border-2 border-red-500/30 rounded-2xl mt-10 shadow-2xl"><p className="text-lg md:text-4xl font-black text-red-500 tracking-wider">名額只有五個，記得盡快舉手行出嚟喇！</p></div>
                         </div>
                     </div>
                 </div>,
@@ -442,8 +415,7 @@
                     <div className="gift-watermark">{p.id}</div>
                     <div className="flex items-center gap-6 md:gap-10 mb-8 relative z-10">
                         <span className="text-5xl md:text-[10rem] font-black text-emerald-400 drop-shadow-2xl">No. {p.id}</span>
-                        <div className="h-16 md:h-40 w-[2px] bg-white/20"/>
-                        <span className="text-2xl md:text-6xl font-bold text-white opacity-40 italic">Lucky Draw</span>
+                        <div className="h-16 md:h-40 w-[2px] bg-white/20"/><span className="text-2xl md:text-6xl font-bold text-white opacity-40 italic">Lucky Draw</span>
                     </div>
                     <div className="relative z-10 px-8 py-10 md:px-14 md:py-16 bg-white/5 backdrop-blur-3xl rounded-[30px] border-2 border-white/20 text-center w-full max-w-6xl shadow-2xl">
                         <h2 className="text-3xl md:text-8xl lg:text-9xl font-black text-white drop-shadow-2xl leading-tight">{p.name}</h2>
@@ -453,27 +425,23 @@
                 <div className="absolute inset-0 z-20 overflow-hidden bg-orange-900/10">
                     <div className="absolute inset-0 aurora-orange opacity-30 blur-3xl z-0" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="px-12 py-10 md:px-24 md:py-14 bg-black/60 backdrop-blur-3xl rounded-[40px] border-4 border-orange-500 text-center shadow-[0_0_100px_rgba(249,88,12,0.8)] transform scale-95 md:scale-110">
-                            <h2 className="text-7xl md:text-[14rem] font-black text-orange-500 italic animate-pulse whitespace-nowrap">加碼！！</h2>
-                        </div>
+                        <div className="px-12 py-10 md:px-24 md:py-14 bg-black/60 backdrop-blur-3xl rounded-[40px] border-4 border-orange-500 text-center shadow-[0_0_100px_rgba(249,88,12,0.8)] transform scale-95 md:scale-110"><h2 className="text-7xl md:text-[14rem] font-black text-orange-500 italic animate-pulse whitespace-nowrap">加碼！！</h2></div>
                     </div>
                 </div>,
                 <div className="absolute inset-0 z-20 overflow-hidden bg-orange-900/10">
                     <div className="absolute inset-0 aurora-orange opacity-30 blur-3xl z-0" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="px-12 py-10 md:px-24 md:py-14 bg-black/60 backdrop-blur-3xl rounded-[40px] border-4 border-orange-500 text-center shadow-[0_0_100px_rgba(249,88,12,0.8)] transform scale-95 md:scale-110">
-                            <h2 className="text-7xl md:text-[14rem] font-black text-orange-500 italic animate-pulse whitespace-nowrap">再加碼！！</h2>
-                        </div>
+                        <div className="px-12 py-10 md:px-24 md:py-14 bg-black/60 backdrop-blur-3xl rounded-[40px] border-4 border-orange-500 text-center shadow-[0_0_100px_rgba(249,88,12,0.8)] transform scale-95 md:scale-110"><h2 className="text-7xl md:text-[14rem] font-black text-orange-500 italic animate-pulse whitespace-nowrap">再加碼！！</h2></div>
                     </div>
                 </div>,
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-6 text-center animate-slide-up">
                     <div className="flex flex-col items-center">
                         <h2 className="text-5xl md:text-[10rem] font-bold text-white tracking-widest mb-10 italic drop-shadow-2xl">感謝各位蒞臨</h2>
-                        <div className="flex flex-col gap-4 mb-16">
+                        <div className="flex flex-col gap-2 mb-12">
                             <p className="text-3xl md:text-[6rem] font-bold text-white/90 whitespace-nowrap tracking-wider">2026 冠恆集團春茗</p>
                             <p className="text-3xl md:text-[6rem] font-bold text-white/90 whitespace-nowrap tracking-wider">圓滿結束</p>
                         </div>
-                        <h3 className="text-7xl md:text-[12rem] font-black text-yellow-400 italic animate-pulse drop-shadow-[0_0_70px_rgba(251,191,36,0.8)] whitespace-nowrap">下年再見!</h3>
+                        <h3 className="text-7xl md:text-[11rem] font-black text-yellow-400 italic animate-pulse drop-shadow-[0_0_70px_rgba(251,191,36,0.8)] whitespace-nowrap">下年再見!</h3>
                     </div>
                 </div>
             ];
@@ -482,36 +450,20 @@
                 let loaded = 0;
                 const urls = Array.from(new Set(domeItems.map(it => it.src)));
                 const forceStart = setTimeout(() => { if (!isReady) finishLoading(); }, 15000);
-                
                 const checkFinish = () => {
                     loaded++;
-                    const totalResources = urls.length + 3; // 圖片 + 3首音樂
+                    const totalResources = urls.length + 3;
                     const fill = document.getElementById('loader-fill');
                     if (fill) fill.style.width = Math.min((loaded/totalResources)*100, 100) + '%';
                     if (loaded >= totalResources) finishLoading();
                 };
-
                 const finishLoading = () => {
                     const pre = document.getElementById('preloader');
                     if (pre) pre.style.opacity = '0';
                     setTimeout(() => { if (pre) pre.style.display = 'none'; setIsReady(true); }, 1000);
                 };
-
-                // Preload Images
-                urls.forEach(url => {
-                    const img = new Image();
-                    img.src = url;
-                    img.onload = checkFinish;
-                    img.onerror = checkFinish;
-                });
-
-                // Preload Audio
-                [audioWelcome, audioBoss, audioMissHK].forEach(a => {
-                    a.current.oncanplaythrough = checkFinish;
-                    a.current.onerror = checkFinish;
-                    a.current.load();
-                });
-
+                urls.forEach(url => { const img = new Image(); img.src = url; img.onload = checkFinish; img.onerror = checkFinish; });
+                [audioWelcome, audioBoss, audioMissHK].forEach(a => { a.current.oncanplaythrough = checkFinish; a.current.onerror = checkFinish; a.current.load(); });
                 return () => clearTimeout(forceStart);
             }, [domeItems]);
 
@@ -519,9 +471,7 @@
 
             return (
                 <div className="relative w-full h-screen bg-[#010401] overflow-hidden select-none animate-fade-in">
-                    <div className="absolute inset-0 z-0 pointer-events-none opacity-100">
-                        <div className="aurora-fluid aurora-v1"/><div className="aurora-fluid aurora-v2"/><div className="aurora-fluid aurora-v3"/>
-                    </div>
+                    <div className="absolute inset-0 z-0 pointer-events-none opacity-100"><div className="aurora-fluid aurora-v1"/><div className="aurora-fluid aurora-v2"/><div className="aurora-fluid aurora-v3"/></div>
                     {allSlides[slide]}
                     <div className="fixed bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4">
                         <button onClick={()=>setSlide(p=>Math.max(0,p-1))} className="p-4 bg-white/5 md:bg-white/10 rounded-full border border-white/20 active:bg-emerald-500/40 transition-all shadow-lg"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
@@ -530,10 +480,7 @@
                     </div>
                     {isZoomed && focusedImage && (
                         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/98 backdrop-blur-3xl p-4" onClick={() => setIsZoomed(false)}>
-                            <div className={`relative max-w-[95vw] max-h-[85vh] md:max-w-6xl md:max-h-[85vh] shadow-2xl rounded-[24px] md:rounded-[32px] border border-white/10 overflow-hidden zoom-in-container`}>
-                                <img src={focusedImage.src} className="block w-full h-full object-contain" />
-                                <div className="absolute top-4 right-4 p-2 bg-black/40 text-white rounded-full">✕</div>
-                            </div>
+                            <div className={`relative max-w-[95vw] max-h-[85vh] md:max-w-6xl md:max-h-[85vh] shadow-2xl rounded-[24px] md:rounded-[32px] border border-white/10 overflow-hidden zoom-in-container`}><img src={focusedImage.src} className="block w-full h-full object-contain" /><div className="absolute top-4 right-4 p-2 bg-black/40 text-white rounded-full">✕</div></div>
                         </div>
                     )}
                 </div>
