@@ -27,13 +27,12 @@
             z-index: 10000;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            transition: opacity 1s ease-in-out;
         }
         .loader-bar-bg {
             width: 240px; height: 2px;
             background: rgba(255,255,255,0.1);
             margin-top: 24px; position: relative;
-            overflow: hidden; border-radius: 2px;
+            overflow: hidden;
         }
         .loader-bar-fill {
             position: absolute; left: 0; top: 0; height: 100%;
@@ -51,6 +50,14 @@
         .aurora-v1 { background: radial-gradient(circle at 20% 20%, #064e3b 0%, transparent 65%); animation: aurora-flow 30s infinite alternate ease-in-out; top: -10%; left: -10%; }
         .aurora-v2 { background: radial-gradient(circle at 80% 80%, #065f46 0%, transparent 65%); animation: aurora-flow 35s infinite alternate-reverse ease-in-out; bottom: -10%; right: -10%; }
         .aurora-v3 { background: radial-gradient(circle at 50% 50%, #0d9488 0%, transparent 55%); animation: aurora-flow 25s infinite alternate ease-in-out; top: 15%; left: 15%; }
+        
+        /* 加碼專用背景 */
+        .aurora-bonus { background: radial-gradient(circle at 50% 50%, #9a3412 0%, transparent 75%); animation: bonus-glitch 0.5s infinite alternate; }
+        @keyframes bonus-glitch {
+            from { opacity: 0.3; filter: blur(100px); }
+            to { opacity: 0.6; filter: blur(80px); }
+        }
+
         @keyframes aurora-flow {
             0% { transform: translate(0,0) rotate(0deg); }
             100% { transform: translate(-5%,10%) rotate(-5deg); }
@@ -63,20 +70,18 @@
             filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
         }
 
-        /* 柔和白金漸變 + 發光 (Slide 10) */
         .text-soft-gold-glow {
             background: linear-gradient(to bottom, #ffffff 0%, #fff9e6 45%, #fef3c7 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 30px rgba(254, 243, 199, 0.5));
+            filter: drop-shadow(0 0 35px rgba(254, 243, 199, 0.6));
         }
 
-        /* 紫色大字發光 (豐富獎品 / 冠亞季) */
         .text-purple-glow {
             background: linear-gradient(to bottom, #f0abfc, #a855f7, #6366f1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 60px rgba(168, 85, 247, 0.9));
+            filter: drop-shadow(0 0 50px rgba(168, 85, 247, 0.9));
         }
 
         .text-emerald-glow {
@@ -86,7 +91,7 @@
             filter: drop-shadow(0 0 40px rgba(16, 185, 129, 0.6));
         }
 
-        /* 頁面滑動動畫容器 */
+        /* 滑動切換動畫 */
         .slide-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
         .slide-item {
             position: absolute; inset: 0;
@@ -94,13 +99,9 @@
             width: 100%; height: 100%;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-
-        /* 前進方向 */
         .slide-enter-next { transform: translateX(100%); opacity: 0; }
         .slide-active { transform: translateX(0); opacity: 1; z-index: 20; }
         .slide-exit-next { transform: translateX(-100%); opacity: 0; }
-
-        /* 後退方向 */
         .slide-enter-prev { transform: translateX(-100%); opacity: 0; }
         .slide-exit-prev { transform: translateX(100%); opacity: 0; }
 
@@ -123,6 +124,36 @@
             font-size: 10px; color: rgba(255,255,255,0.1); font-weight: bold;
             letter-spacing: 2px; pointer-events: none;
         }
+
+        /* 加碼特效 */
+        .bonus-box {
+            padding: 50px 100px;
+            background: rgba(0,0,0,0.8);
+            border: 6px solid #f97316;
+            border-radius: 50px;
+            box-shadow: 0 0 40px #f97316, inset 0 0 30px #ea580c;
+            animation: bonus-impact 1.2s infinite alternate ease-in-out, bonus-shake 0.3s infinite;
+            z-index: 50;
+        }
+        @keyframes bonus-impact {
+            from { transform: scale(0.9) rotate(-1deg); box-shadow: 0 0 60px #f97316; }
+            to { transform: scale(1.1) rotate(1deg); box-shadow: 0 0 150px #f97316, 0 0 50px #fbbf24; }
+        }
+        @keyframes bonus-shake {
+            0% { transform: translate(1px, 1px); }
+            50% { transform: translate(-1px, -2px); }
+            100% { transform: translate(2px, 0px); }
+        }
+
+        .bouncing-text {
+            position: absolute;
+            font-weight: 900;
+            white-space: nowrap;
+            user-select: none;
+            pointer-events: none;
+            color: #f97316;
+            text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
@@ -131,7 +162,7 @@
             <img src="Logo.png" alt="Logo" class="w-32 h-32 object-contain" />
             <div class="flex flex-col items-center">
                 <div class="loader-bar-bg"><div id="loader-fill" class="loader-bar-fill"></div></div>
-                <div id="loader-text" class="text-[10px] text-emerald-500/60 mt-4 tracking-widest uppercase font-bold animate-pulse">Preloading Ceremonial Assets...</div>
+                <div id="loader-text" class="text-[10px] text-emerald-500/60 mt-4 tracking-widest uppercase font-bold animate-pulse">Syncing Ceremony Assets...</div>
             </div>
         </div>
     </div>
@@ -194,31 +225,78 @@
 
         // --- 子組件 ---
 
-        function GallerySlide({ items, isZoomed, setIsZoomed, setFocusedImage }) {
+        function BouncingTextBackground({ text, count = 30 }) {
+            const [particles, setParticles] = useState([]);
+            const requestRef = useRef();
+
+            useEffect(() => {
+                const w = window.innerWidth;
+                const h = window.innerHeight;
+                const initialParticles = Array.from({ length: count }).map(() => ({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    vx: (Math.random() - 0.5) * 15, // 速度加倍
+                    vy: (Math.random() - 0.5) * 15,
+                    size: Math.random() * 8 + 4, // 4vw - 12vw
+                    opacity: Math.random() * 0.25 + 0.1,
+                    blur: Math.random() * 3
+                }));
+                setParticles(initialParticles);
+
+                const animate = () => {
+                    setParticles(prev => prev.map(p => {
+                        let nx = p.x + p.vx;
+                        let ny = p.y + p.vy;
+                        let nvx = p.vx;
+                        let nvy = p.vy;
+                        if (nx < 0 || nx > window.innerWidth - 150) nvx *= -1;
+                        if (ny < 0 || ny > window.innerHeight - 80) nvy *= -1;
+                        return { ...p, x: nx, y: ny, vx: nvx, vy: nvy };
+                    }));
+                    requestRef.current = requestAnimationFrame(animate);
+                };
+                requestRef.current = requestAnimationFrame(animate);
+                return () => cancelAnimationFrame(requestRef.current);
+            }, [count]);
+
+            return (
+                <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+                    {particles.map((p, i) => (
+                        <div key={i} className="bouncing-text" style={{ 
+                            left: p.x, top: p.y, fontSize: `${p.size}vw`, opacity: p.opacity, filter: `blur(${p.blur}px)`
+                        }}>
+                            {text}
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        function GallerySlide({ items, isZoomed, setIsZoomed, setFocusedImage, isActive }) {
             const stageRef = useRef(null);
             const rotationRef = useRef(0);
             const [radius, setRadius] = useState(1100);
 
             useEffect(() => {
-                const updateRadius = () => setRadius(window.innerWidth < 768 ? 700 : 1100);
-                updateRadius();
-                window.addEventListener('resize', updateRadius);
-                return () => window.removeEventListener('resize', updateRadius);
+                const update = () => setRadius(window.innerWidth < 768 ? 700 : 1100);
+                update(); window.addEventListener('resize', update);
+                return () => window.removeEventListener('resize', update);
             }, []);
 
             useEffect(() => {
+                if (!isActive) return;
+                let timer;
                 if (isZoomed) {
-                    const timer = setTimeout(() => setIsZoomed(false), 6000);
-                    return () => clearTimeout(timer);
+                    timer = setTimeout(() => setIsZoomed(false), 6000);
                 } else {
-                    const cycleTimer = setTimeout(() => {
+                    timer = setTimeout(() => {
                         const randomImg = items[Math.floor(Math.random() * items.length)];
                         setFocusedImage(randomImg);
                         setIsZoomed(true);
                     }, 5000);
-                    return () => clearTimeout(cycleTimer);
                 }
-            }, [isZoomed, items, setIsZoomed, setFocusedImage]);
+                return () => clearTimeout(timer);
+            }, [isZoomed, isActive, items]);
 
             useEffect(() => {
                 let raf;
@@ -251,21 +329,7 @@
             );
         }
 
-        function SloganSlide() {
-            return (
-                <div className="flex flex-col items-center justify-center h-full px-4 text-center">
-                    <img src="Logo.png" alt="Logo" className="w-full max-w-4xl h-auto drop-shadow-2xl mb-8" />
-                    <h1 className="text-4xl md:text-7xl font-light text-white-gold tracking-widest uppercase mb-4">Annual Dinner</h1>
-                    <div className="text-orange-300 text-xl md:text-3xl font-medium tracking-[0.5em] mb-10">2 0 2 5</div>
-                    <div className="flex flex-col gap-3">
-                        <span className="text-[8.5vw] md:text-[5.5rem] font-black text-white-gold drop-shadow-2xl whitespace-nowrap">冠世風華廿二載</span>
-                        <span className="text-[8.5vw] md:text-[5.5rem] font-black text-white-gold drop-shadow-2xl whitespace-nowrap">恒守初心志未改</span>
-                    </div>
-                </div>
-            );
-        }
-
-        // --- 主應用程序 ---
+        // --- 主程式 ---
 
         function App() {
             const [slide, setSlide] = useState(0);
@@ -281,19 +345,13 @@
 
             const domeItems = useMemo(() => buildDomeStructure(PHOTO_IDS), []);
 
-            const fadeAudio = (key, targetVol, duration = 1200) => {
-                const a = audios.current[key]; if (!a) return;
-                const steps = 25; const delta = (targetVol - a.volume) / steps;
-                let c = 0;
-                const t = setInterval(() => {
-                    c++; a.volume = Math.max(0, Math.min(1, a.volume + delta));
-                    if (c >= steps) { a.volume = targetVol; if (targetVol === 0) { a.pause(); a.currentTime = 0; } clearInterval(t); }
-                }, duration / steps);
-            };
-
             const playAudioZone = (zoneKey, files, loop = true) => {
                 if (activeZoneRef.current === zoneKey) return;
-                if (activeZoneRef.current) fadeAudio(activeZoneRef.current, 0);
+                
+                if (activeZoneRef.current && audios.current[activeZoneRef.current]) {
+                    audios.current[activeZoneRef.current].pause();
+                    audios.current[activeZoneRef.current].currentTime = 0;
+                }
 
                 const fileArr = Array.isArray(files) ? files : [files];
                 let currentIdx = 0;
@@ -302,34 +360,37 @@
                     if (!interacted) return;
                     const audio = new Audio(fileArr[currentIdx]);
                     audio.muted = isMuted;
-                    audio.volume = 0;
+                    audio.volume = 1;
                     audio.play().catch(()=>{});
-                    fadeAudio(zoneKey, 1);
+                    
                     audio.onended = () => {
                         currentIdx = (currentIdx + 1) % fileArr.length;
                         if (loop || currentIdx !== 0) playNext();
                     };
                     audios.current[zoneKey] = audio;
                 };
+
                 playNext();
                 activeZoneRef.current = zoneKey;
             };
 
             useEffect(() => {
                 if (!isReady || !interacted) return;
-                // 分頁音效綁定
-                if (slide === 0) playAudioZone('dome_start', BGM_CONFIG.go);
-                else if (slide === 1) playAudioZone('slogan', BGM_CONFIG.welcome);
-                else if (slide === 2) playAudioZone('speech', BGM_CONFIG.boss);
-                else if (slide >= 3 && slide <= 7) playAudioZone('service', BGM_CONFIG.misshk);
-                else if (slide >= 8 && slide <= 10) playAudioZone('game1', BGM_CONFIG.ukulele);
-                else if (slide === 11 || slide === 13 || slide === 15) playAudioZone('dome_seq', BGM_CONFIG.domeSeq);
-                else if (slide === 12) playAudioZone('game2', BGM_CONFIG.game2Seq);
-                else if (slide === 14) playAudioZone('game3', BGM_CONFIG.mark6);
-                else if (slide === 16) playAudioZone('draw', BGM_CONFIG.draw);
-                else if (slide === 17) playAudioZone('sb1', BGM_CONFIG.sb1);
-                else if (slide === 18) playAudioZone('sb2', BGM_CONFIG.sb2);
-                else { if (activeZoneRef.current) fadeAudio(activeZoneRef.current, 0); activeZoneRef.current = null; }
+                if (slide === 0) playAudioZone('d1', BGM_CONFIG.go);
+                else if (slide === 1) playAudioZone('sl', BGM_CONFIG.welcome);
+                else if (slide === 2) playAudioZone('sp', BGM_CONFIG.boss);
+                else if (slide >= 3 && slide <= 7) playAudioZone('sr', BGM_CONFIG.misshk);
+                else if (slide >= 8 && slide <= 10) playAudioZone('g1', BGM_CONFIG.ukulele);
+                else if (slide === 11 || slide === 13 || slide === 15) playAudioZone('ds', BGM_CONFIG.domeSeq);
+                else if (slide === 12) playAudioZone('g2', BGM_CONFIG.game2Seq);
+                else if (slide === 14) playAudioZone('g3', BGM_CONFIG.mark6);
+                else if (slide === 16) playAudioZone('dr', BGM_CONFIG.draw);
+                else if (slide === 17) playAudioZone('s1', BGM_CONFIG.sb1);
+                else if (slide === 18) playAudioZone('s2', BGM_CONFIG.sb2);
+                else {
+                    if (activeZoneRef.current && audios.current[activeZoneRef.current]) audios.current[activeZoneRef.current].pause();
+                    activeZoneRef.current = null;
+                }
             }, [slide, isReady, interacted]);
 
             useEffect(() => { Object.values(audios.current).forEach(a => { if (a) a.muted = isMuted; }); }, [isMuted]);
@@ -339,57 +400,90 @@
                 setSlide(newSlide);
             };
 
-            const slides = [
-                <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} />,
-                <SloganSlide />,
-                <div className="flex flex-col h-full gap-8">
-                    <div className="text-center"><h1 className="text-6xl md:text-8xl font-bold text-white-gold tracking-[0.5em] uppercase">致詞</h1><span className="text-emerald-400 text-2xl md:text-3xl font-light tracking-[0.3em] uppercase">Speech</span></div>
-                    <div className="flex flex-col gap-10 md:gap-[5cm] text-[10vw] md:text-7xl font-medium text-white drop-shadow-2xl"><span>Morris & Mikey</span><div className="h-[2px] w-32 md:hidden bg-white/20" /><span>Teddy & Kanji</span></div>
+            const allSlides = [
+                <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 0} />,
+                <div className="flex flex-col h-full px-4 text-center">
+                    <img src="Logo.png" alt="Logo" className="w-full max-w-4xl h-auto drop-shadow-2xl mb-8" />
+                    <h1 className="text-4xl md:text-7xl font-light text-white-gold tracking-widest uppercase mb-4 leading-none">Annual Dinner</h1>
+                    <div className="text-orange-300 text-xl md:text-3xl font-medium tracking-[0.5em] mb-10">2 0 2 5</div>
+                    <div className="flex flex-col gap-3 text-[8.5vw] md:text-[5.5rem] font-black text-white-gold drop-shadow-2xl">
+                        <span className="whitespace-nowrap leading-tight">冠世風華廿二載</span>
+                        <span className="whitespace-nowrap leading-tight">恒守初心志未改</span>
+                    </div>
                 </div>,
-                <div className="h-full text-center px-6 flex flex-col justify-center"><h2 className="text-6xl md:text-[9rem] font-bold text-white-gold tracking-[0.15em] mb-4">長期服務獎</h2><span className="text-emerald-500/80 text-2xl md:text-5xl font-light tracking-[0.4em] uppercase italic">Long Service Award</span></div>,
-                <div className="h-full text-center px-6 flex flex-col justify-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black tracking-widest mb-12">10 Years</span><span className="text-5xl md:text-9xl font-medium text-white">David Tsang</span></div>,
-                <div className="h-full text-center px-6 flex flex-col justify-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black tracking-widest mb-12">15 Years</span><span className="text-5xl md:text-9xl font-medium text-white">Kanji Kwok</span></div>,
-                <div className="h-full text-center px-6 flex flex-col justify-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black tracking-widest mb-12">20 Years</span><div className="flex flex-col gap-6"><span className="text-5xl md:text-9xl font-medium text-white">Kason Lau</span><span className="text-5xl md:text-9xl font-medium text-white">Steven Ngai</span></div></div>,
-                <div className="h-full text-center px-6 flex flex-col justify-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black tracking-widest mb-12">25 Years</span><span className="text-5xl md:text-9xl font-medium text-white">Wilson Chang</span></div>,
-                <div className="h-full text-center flex flex-col justify-center"><h2 className="text-[15vw] md:text-[15rem] font-black italic text-emerald-glow tracking-tighter">GAME TIME!</h2></div>,
-                <div className="flex flex-col h-full text-center gap-10">
-                    <div className="text-left px-10 md:px-20 w-full max-w-7xl"><span className="text-yellow-500 text-2xl md:text-4xl font-bold uppercase italic">唔係講笑...</span><p className="text-white/40 text-lg md:text-2xl uppercase tracking-widest italic font-medium">Seriously...</p></div>
-                    <div className="flex flex-col gap-4"><h2 className="text-5xl md:text-[10rem] font-black text-soft-gold-glow leading-tight">今晚獎金、獎品<br />非常豐富！！</h2><p className="text-white/40 text-xl md:text-4xl uppercase tracking-widest font-medium">Massive prizes & cash await!!</p></div>
+                <div className="flex flex-col h-full items-center justify-center gap-12 px-6">
+                    <div className="text-center"><h1 className="text-6xl md:text-9xl font-bold text-white-gold tracking-[0.5em] uppercase leading-none">致詞</h1><span className="text-emerald-400 text-2xl md:text-4xl font-light tracking-[0.3em] uppercase mt-2 block">Speech</span></div>
+                    <div className="flex flex-col items-center gap-10 md:gap-16 text-[8vw] md:text-8xl font-medium text-white drop-shadow-2xl">
+                        <span className="whitespace-nowrap">Morris & Mikey</span>
+                        <div className="h-[2px] w-48 md:w-96 bg-white/20" />
+                        <span className="whitespace-nowrap">Teddy & Kanji</span>
+                    </div>
                 </div>,
-                <div className="h-full text-center px-6 flex flex-col justify-center">
-                    <div className="w-full max-w-6xl mb-12 border-b border-white/10 pb-4 flex justify-between items-end"><span className="text-emerald-400 text-xl md:text-3xl font-bold tracking-widest uppercase">Game 1</span><span className="text-white text-2xl md:text-5xl font-black">被抽中的枱號</span></div>
-                    <div className="flex flex-col items-center gap-6"><p className="text-2xl md:text-4xl font-bold text-white opacity-90 uppercase">被抽中的枱號，每人皆可獲得</p><p className="text-lg md:text-xl text-white/40 uppercase tracking-widest">Every guest wins when their table number is drawn!</p><span className="text-purple-glow font-black leading-none text-8xl md:text-[15rem] mt-10">豐富獎品</span><span className="text-purple-400/60 text-2xl md:text-5xl uppercase font-bold tracking-widest">Fabulous Prizes</span></div>
+                <div className="h-full text-center px-6 flex flex-col justify-center items-center"><h2 className="text-6xl md:text-[9rem] font-bold text-white-gold tracking-[0.15em] mb-4 uppercase">長期服務獎</h2><span className="text-emerald-500/80 text-2xl md:text-5xl font-light tracking-[0.4em] uppercase italic">Long Service Award</span></div>,
+                <div className="h-full text-center px-6 flex flex-col justify-center items-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black tracking-widest mb-12">10 Years</span><span className="text-5xl md:text-9xl font-medium text-white">David Tsang</span></div>,
+                <div className="h-full text-center px-6 flex flex-col justify-center items-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black tracking-widest mb-12">15 Years</span><span className="text-5xl md:text-9xl font-medium text-white">Kanji Kwok</span></div>,
+                <div className="h-full text-center px-6 flex flex-col justify-center items-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black tracking-widest mb-12">20 Years</span><div className="flex flex-col gap-6"><span className="text-5xl md:text-9xl font-medium text-white">Kason Lau</span><span className="text-5xl md:text-9xl font-medium text-white">Steven Ngai</span></div></div>,
+                <div className="h-full text-center px-6 flex flex-col justify-center items-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black tracking-widest mb-12">25 Years</span><span className="text-5xl md:text-9xl font-medium text-white">Wilson Chang</span></div>,
+                <div className="h-full text-center flex flex-col justify-center items-center"><h2 className="text-[15vw] md:text-[15rem] font-black italic text-emerald-glow tracking-tighter uppercase">GAME TIME!</h2></div>,
+                <div className="flex flex-col h-full items-center justify-center text-center gap-12">
+                    <div className="text-left w-full max-w-7xl px-10 md:px-20"><span className="text-yellow-500 text-3xl md:text-5xl font-bold uppercase italic">唔係講笑...</span><p className="text-white/40 text-xl md:text-3xl uppercase tracking-widest italic font-medium mt-2">Seriously...</p></div>
+                    <div className="flex flex-col gap-6">
+                        <h2 className="text-6xl md:text-[11rem] font-black tracking-wider text-soft-gold-glow leading-tight">今晚獎金、獎品<br />非常豐富！！</h2>
+                        <p className="text-white/40 text-2xl md:text-5xl uppercase tracking-[0.2em] font-medium mt-4">Massive prizes & cash await!!</p>
+                    </div>
                 </div>,
-                <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} />,
-                <div className="h-full px-4 md:px-6 flex flex-col justify-center">
+                <div className="h-full text-center px-6 flex flex-col justify-center items-center">
+                    <div className="w-full max-w-6xl mb-12 border-b border-white/10 pb-4 flex justify-between items-end"><span className="text-emerald-400 text-xl md:text-3xl font-bold tracking-widest uppercase text-left">Game 1</span><span className="text-white text-2xl md:text-4xl font-black text-right">被抽中的枱號</span></div>
+                    <div className="flex flex-col items-center gap-6"><p className="text-2xl md:text-4xl font-bold text-white opacity-90 uppercase">被抽中的枱號，每人皆可獲得</p><p className="text-lg md:text-xl text-white/40 uppercase tracking-widest italic">Every guest wins when their table number is drawn!</p><span className="text-purple-glow font-black leading-none text-8xl md:text-[15rem] mt-10 shadow-2xl">豐富獎品</span><span className="text-purple-400/60 text-2xl md:text-5xl uppercase font-bold tracking-widest italic mt-2">Fabulous Prizes</span></div>
+                </div>,
+                <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 11} />,
+                <div className="h-full px-4 md:px-6 flex flex-col justify-center items-center">
                     <div className="w-full max-w-7xl mb-12 border-b border-white/10 pb-4 flex justify-between items-end"><span className="text-emerald-400 text-2xl md:text-6xl font-bold tracking-wide uppercase">Game 2</span><span className="text-white text-4xl md:text-8xl font-bold uppercase">競飲</span></div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 w-full max-w-7xl h-[200px] md:h-[300px]">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 w-full max-w-7xl h-[200px] md:h-[300px]">
                         {[1,2,3].map(idx => (
-                            <div key={idx} className="flex flex-col h-full flex-1 group"><div className="flex-grow bg-white/5 border border-white/10 p-8 rounded-xl cursor-pointer transition-all duration-1000 flex flex-col justify-center items-center blur-2xl group-active:blur-0"><p className="text-white text-2xl md:text-4xl font-black">Revealing Group {idx}</p></div><div className="mt-4 text-emerald-500 animate-bounce flex justify-center text-3xl">↓</div><div className="w-full bg-white/5 border border-white/20 py-4 rounded-lg text-center mt-2 shadow-lg flex flex-col leading-tight"><span className="text-xl font-black text-white uppercase opacity-90">晉級</span><span className="text-xs md:text-sm text-white/50 uppercase font-bold tracking-tighter">PROMOTED</span></div></div>
+                            <div key={idx} className="flex flex-col h-full flex-1 group relative">
+                                <div className="flex-grow bg-white/5 border border-white/10 p-8 rounded-xl cursor-pointer transition-all duration-1000 flex flex-col justify-center items-center blur-2xl active:blur-0"><p className="text-white text-2xl md:text-4xl font-black">Revealing Group {idx}</p></div>
+                                <div className="mt-4 text-emerald-500 animate-bounce flex justify-center text-3xl">↓</div>
+                                <div className="w-full bg-white/5 border border-white/20 py-4 rounded-lg text-center mt-2 shadow-lg flex flex-col leading-tight"><span className="text-xl font-black text-white uppercase opacity-90">晉級</span><span className="text-xs md:text-sm text-white/50 uppercase font-bold tracking-tighter">PROMOTED</span></div>
+                            </div>
                         ))}
                     </div>
-                    <div className="mt-12 flex flex-col items-center px-10 py-5 md:px-32 md:py-10 bg-gradient-to-r from-emerald-600/40 to-emerald-400/40 border-2 border-emerald-400/60 rounded-2xl"><span className="text-3xl md:text-8xl font-black text-purple-glow tracking-widest uppercase">冠・亞・季</span><span className="text-xl md:text-4xl text-white/80 font-medium italic uppercase mt-2">Champion • 1st • 2nd Runner-up</span></div>
+                    <div className="mt-16 flex flex-col items-center px-10 py-8 md:px-32 md:py-12 bg-gradient-to-r from-emerald-600/30 to-emerald-400/30 border-2 border-emerald-400/60 rounded-2xl">
+                        <span className="text-4xl md:text-9xl font-black text-purple-glow tracking-widest uppercase leading-none">冠・亞・季</span>
+                        <span className="text-xl md:text-4xl text-white/80 font-medium italic uppercase mt-4">Champion • 1st • 2nd Runner-up</span>
+                    </div>
                 </div>,
-                <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} />,
-                <div className="h-full px-6 flex flex-col justify-center">
+                <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 13} />,
+                <div className="h-full px-6 flex flex-col justify-center items-center">
                     <div className="w-full max-w-6xl transform -translate-y-8">
                         <div className="flex justify-between items-end mb-10 border-b border-white/10 pb-4"><span className="text-emerald-400 text-2xl md:text-5xl font-bold uppercase tracking-widest">Game 3</span><div className="flex flex-col items-end"><span className="text-white text-5xl md:text-8xl font-black drop-shadow-2xl">Bingo!</span><span className="text-white/40 text-xl md:text-2xl uppercase tracking-[0.2em]">Bingo Challenge</span></div></div>
                         <div className="space-y-6 md:space-y-12 pl-6 border-l-4 border-emerald-500/50 text-left">
                             <div className="flex flex-col gap-1"><div className="flex items-center gap-6"><div className="w-10 h-10 md:w-14 md:h-14 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-xl">1</div><p className="text-xl md:text-5xl font-bold text-white leading-tight">每人手上已有一張「六合彩飛」</p></div><p className="text-white/40 text-sm md:text-xl ml-16 md:ml-20 uppercase font-medium">Each guest holds a "Mark Six" ticket.</p></div>
                             <div className="flex flex-col gap-1"><div className="flex items-center gap-6"><div className="w-10 h-10 md:w-14 md:h-14 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-xl">2</div><p className="text-xl md:text-5xl font-bold text-white leading-tight">會從 1 - 49 號中抽數字</p></div><p className="text-white/40 text-sm md:text-xl ml-16 md:ml-20 uppercase font-medium">Numbers 1-49 will be drawn randomly.</p></div>
                             <div className="flex flex-col gap-1"><div className="flex items-center gap-6"><div className="w-10 h-10 md:w-14 md:h-14 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-xl">3</div><p className="text-xl md:text-5xl font-bold text-white leading-tight">最快集齊 <span class='text-emerald-400 font-black'>6</span> 組號碼</p></div><p className="text-white/40 text-sm md:text-xl ml-16 md:ml-20 uppercase font-medium">First to complete 6 sets of numbers wins!</p></div>
-                            <div className="p-4 md:p-10 bg-red-600/20 border-2 border-red-500/30 rounded-2xl mt-10 shadow-2xl flex flex-col gap-2"><p className="text-lg md:text-4xl font-black text-red-500 tracking-wider">名額五個，記得盡快舉手行出嚟喇！</p><p className="text-sm md:text-xl font-bold text-red-400/60 uppercase italic">Only 5 winners! Raise your hand and come forward ASAP!</p></div>
+                            <div className="p-4 md:p-10 bg-red-600/20 border-2 border-red-500/30 rounded-2xl mt-10 shadow-2xl flex flex-col gap-2"><p className="text-lg md:text-4xl font-black text-red-500 tracking-wider uppercase">名額五個，記得盡快舉手行出嚟喇！</p><p className="text-sm md:text-xl font-bold text-red-400/60 uppercase italic">Only 5 winners! Raise your hand and come forward ASAP!</p></div>
                         </div>
                     </div>
                 </div>,
-                <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} />,
-                <div className="h-full text-center flex flex-col justify-center"><h2 className="text-8xl md:text-[15rem] font-black text-white-gold leading-none py-8 uppercase">抽獎環節</h2><span className="text-white/60 text-4xl md:text-7xl font-light uppercase mt-6 italic">Lucky Draw Session</span></div>,
-                <div className="h-full flex items-center justify-center bg-orange-950/20 overflow-hidden"><h2 className="text-7xl md:text-[14rem] font-black text-orange-500 italic animate-pulse whitespace-nowrap uppercase">加碼！！</h2></div>,
-                <div className="h-full flex items-center justify-center bg-orange-950/20 overflow-hidden"><h2 className="text-7xl md:text-[14rem] font-black text-orange-500 italic animate-pulse whitespace-nowrap uppercase">再加碼！！</h2></div>,
+                <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 15} />,
+                <div className="h-full text-center flex flex-col justify-center items-center"><h2 className="text-8xl md:text-[15rem] font-black text-white-gold leading-none py-8 uppercase">抽獎環節</h2><span className="text-white/60 text-4xl md:text-7xl font-light uppercase mt-6 italic tracking-widest">Lucky Draw Session</span></div>,
+                <div className="h-full flex items-center justify-center overflow-hidden relative">
+                    <BouncingTextBackground text="加碼" count={30} />
+                    <div className="absolute inset-0 aurora-bonus blur-[120px] opacity-60" />
+                    <div className="bonus-box z-10 text-center"><h2 className="text-7xl md:text-[15rem] font-black text-orange-500 italic uppercase drop-shadow-[0_0_40px_rgba(249,115,22,0.8)] leading-none">加碼！！</h2></div>
+                </div>,
+                <div className="h-full flex items-center justify-center overflow-hidden relative">
+                    <BouncingTextBackground text="再加碼" count={30} />
+                    <div className="absolute inset-0 aurora-bonus blur-[120px] opacity-60" />
+                    <div className="bonus-box z-10 text-center border-[#ea580c] shadow-[0_0_120px_rgba(234,88,12,0.8)]"><h2 className="text-7xl md:text-[15rem] font-black text-[#ea580c] italic uppercase drop-shadow-[0_0_40px_rgba(234,88,12,0.8)] leading-none">再加碼！！</h2></div>
+                </div>,
                 <div className="flex flex-col items-center justify-center h-full text-center gap-12 px-6">
                     <h2 className="text-5xl md:text-9xl lg:text-[11rem] font-bold text-white tracking-widest italic drop-shadow-2xl">感謝各位蒞臨</h2>
-                    <div className="flex flex-col gap-4"><p className="text-2xl md:text-5xl lg:text-[6rem] font-bold text-white/90 whitespace-nowrap tracking-wider">2026 冠恒集團春茗</p><p className="text-2xl md:text-5xl lg:text-[6rem] font-bold text-white/90 whitespace-nowrap tracking-wider">圓滿結束</p></div>
-                    <h3 className="text-6xl md:text-9xl lg:text-[13rem] font-black text-yellow-400 italic animate-pulse drop-shadow-[0_0_70px_rgba(251,191,36,0.8)] mt-6 uppercase">下年再見!</h3>
+                    <div className="flex flex-col gap-4">
+                        <p className="text-2xl md:text-5xl lg:text-[6.5rem] font-bold text-white/90 whitespace-nowrap tracking-wider">2026 冠恒集團春茗</p>
+                        <p className="text-2xl md:text-5xl lg:text-[6.5rem] font-bold text-white/90 whitespace-nowrap tracking-wider leading-snug">圓滿結束</p>
+                    </div>
+                    <h3 className="text-6xl md:text-9xl lg:text-[13rem] font-black text-yellow-400 italic animate-pulse drop-shadow-[0_0_70px_rgba(251,191,36,0.8)] mt-6 uppercase leading-none">下年再見!</h3>
                 </div>
             ];
 
@@ -397,17 +491,18 @@
                 let imgL = 0; let audL = 0;
                 const imgU = PHOTO_IDS.map(id => `https://drive.google.com/thumbnail?id=${id}&sz=w1000`);
                 const audU = Object.values(BGM_CONFIG).flat();
+                const total = imgU.length + audU.length;
                 const check = () => {
-                    const prog = Math.min(((imgL + audL) / (imgU.length + audU.length)) * 100, 100);
+                    const prog = Math.min(((imgL + audL) / total) * 100, 100);
                     if (document.getElementById('loader-fill')) document.getElementById('loader-fill').style.width = prog + '%';
-                    if (imgL + audL >= imgU.length + audU.length) {
+                    if (imgL + audL >= total) {
                         const pre = document.getElementById('preloader'); if (pre) pre.style.opacity = '0';
                         setTimeout(() => { if (pre) pre.style.display = 'none'; setIsReady(true); }, 1000);
                     }
                 };
                 imgU.forEach(u => { const i = new Image(); i.src = u; i.onload = () => { imgL++; check(); }; i.onerror = () => { imgL++; check(); }; });
                 audU.forEach(u => { const a = new Audio(u); a.oncanplaythrough = () => { audL++; check(); }; a.onerror = () => { audL++; check(); }; a.load(); });
-                setTimeout(() => { if (!isReady) setIsReady(true); }, 25000);
+                setTimeout(() => { if (!isReady) setIsReady(true); }, 30000);
             }, []);
 
             if (!isReady) return null;
@@ -418,16 +513,16 @@
                         <div className="interaction-overlay" onClick={() => setInteracted(true)}>
                             <img src="Logo.png" alt="Logo" className="w-48 h-48 object-contain mb-8 animate-pulse" />
                             <h2 className="text-3xl font-bold tracking-[0.5em] text-white-gold mb-4 uppercase">歡迎進入</h2>
-                            <p className="text-emerald-400 tracking-[0.3em] animate-bounce">TAP TO START CEREMONY</p>
+                            <p className="text-emerald-400 tracking-[0.3em] animate-bounce text-center">TAP TO START CEREMONY</p>
                         </div>
                     )}
                     <div className={`content-wrapper h-full w-full ${!interacted ? 'is-blurred' : 'is-revealed'}`}>
                         <div className="fixed top-6 left-6 z-[100]"><button onClick={() => setIsMuted(!isMuted)} className="p-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full transition-all shadow-2xl backdrop-blur-md">{isMuted ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2V15H6L11 19V5Z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg> : <div className="flex items-center gap-2"><div className="flex items-end h-3 gap-0.5">{[0.1, 0.4, 0.2, 0.5].map((d, i) => (<div key={i} className="w-0.5 bg-yellow-400 animate-bounce" style={{ height: '100%', animationDelay: `${d}s` }} />))}</div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2V15H6L11 19V5Z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></div>}</button></div>
-                        <div className="slide-num-label">{slide + 1} / {slides.length}</div>
+                        <div className="slide-num-label">{slide + 1} / {allSlides.length}</div>
                         <div className="absolute inset-0 z-0 pointer-events-none opacity-100"><div className="aurora-fluid aurora-v1"/><div className="aurora-fluid aurora-v2"/><div className="aurora-fluid aurora-v3"/></div>
                         
                         <div className="slide-container">
-                            {slides.map((content, idx) => (
+                            {allSlides.map((content, idx) => (
                                 <div key={idx} className={`slide-item ${idx === slide ? 'slide-active' : (idx < slide ? (direction === 'next' ? 'slide-exit-next' : 'slide-enter-prev') : (direction === 'next' ? 'slide-enter-next' : 'slide-exit-prev'))}`} style={{ visibility: Math.abs(idx - slide) > 1 ? 'hidden' : 'visible' }}>
                                     {content}
                                 </div>
@@ -436,8 +531,8 @@
 
                         <div className="fixed bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4">
                             <button onClick={()=>changeSlide(Math.max(0, slide-1))} className="p-4 bg-white/5 md:bg-white/10 rounded-full border border-white/20 active:bg-emerald-500/40 transition-all shadow-lg pointer-events-auto"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                            <div className="flex gap-1.5 flex-wrap justify-center max-w-[200px] md:max-w-[800px]">{slides.map((_,i)=><div key={i} className={`w-1 h-1 md:w-1.5 md:h-1.5 rounded-full transition-all ${slide===i ? 'bg-yellow-400 w-3 md:w-6' : 'bg-white/10'}`}/>)}</div>
-                            <button onClick={()=>changeSlide(Math.min(slides.length-1, slide+1))} className="p-4 bg-white/5 md:bg-white/10 rounded-full border border-white/20 active:bg-emerald-500/40 transition-all shadow-lg pointer-events-auto"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                            <div className="flex gap-1.5 flex-wrap justify-center max-w-[200px] md:max-w-[800px]">{allSlides.map((_,i)=><div key={i} className={`w-1 h-1 md:w-1.5 md:h-1.5 rounded-full transition-all ${slide===i ? 'bg-yellow-400 w-3 md:w-6' : 'bg-white/10'}`}/>)}</div>
+                            <button onClick={()=>changeSlide(Math.min(allSlides.length-1, slide+1))} className="p-4 bg-white/5 md:bg-white/10 rounded-full border border-white/20 active:bg-emerald-500/40 transition-all shadow-lg pointer-events-auto"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                         </div>
                     </div>
 
