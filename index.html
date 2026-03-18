@@ -156,6 +156,7 @@
             background: #10b981; transition: height 0.1s linear;
         }
 
+        /* 加碼特效 */
         .bonus-box {
             padding: 50px 100px; background: rgba(0,0,0,0.85);
             border: 6px solid #f97316; border-radius: 50px;
@@ -210,42 +211,20 @@
             sb2: 'music/sb2.mp3'
         };
 
+        // 更新後的 43 張新 ID
         const PHOTO_IDS = [
-            "1knMls3mAamBlKH_t4ySVrs6KfPw0sDmC", "1F8bx9ZMLYpWRFOMG4Y5tIv3V9-I5CL4R", "1ZdKRUiM7ZFDxm6QibycXVoGd0cPoE9iW",
-            "1fXrfApUDANmM218zBTlWJ98Zrzd-Gr8M", "1TYPcJ2OW0Bj6gHzsRA9DTTdXA2_jsKdz", "1kWxyJB2CmdA6VQnUJNYao_Bj9oPYDb36",
-            "1yQ6YR2V-Ys5BM2GCFrwdPuEDtvMZHoRo", "1t7Awq7GMRNZRTssTNu1ZD1rk2c0KzCVl", "1Zha71J9_63vS4C-OUj2WBRarqIkVmgku",
-            "1Lm2p1xnBy6VdVMx-gsqFfWsFoNYNf6BJ", "1GKmX9R8IRLlLd2ZWUK4D7tLkgU6sPOZf", "1wxVut_ZtkwS-N8jvhTW3OIVF0Pb0DIhA",
-            "1JEb3zqciiO5sy5qT5W-M40xsAdQr3_Fb", "1Gw5MYcXfsqqbW0FG1G_fesmCU-BJZKUu", "11OqVqXbI-CczTuJiQTPftsosXwIdNlDU",
-            "1EwkVkmb5oKVkCQT5Oy9-aWQ0W-MXjTVI", "1s6kZ7_-dxnQ_v9jDS7a8xbN91xNLNKYT", "10Egokj03DgoxCe9KQKT60KvVNRofQCAY",
-            "1uWR-Iz4ODPlDb1ZrjLgn-gcRoiFFIyUh", "17bQND5Zxy_k1ldL4wWA4zAW19FK_PF1d", "1nEXMKj35tGeXcgve4I84rT69zCuXhDfM",
-            "1UFkpT0gMoKHsOqMvUSOgVyia_j11A879", "1NHbeFh9pvoJEPrFZaV6Az6WrkNWIeulX", "1A6Cb5COfMSyQH79iafwgsfzaudffnq1-",
-            "1-FlhAjFmSSt4KdxK9R8nzgFpYeyLX40-", "14vKyX8UwYOgq6mPGshV5f64TXUtfL4iq", "1jOInBKCydn-ehCv7hiZs3OEWKSIavJH1",
-            "1qsb4NRWhLQwKXlwepOlnl7Vrs-ExIU_B", "17gWRTBcG0SEtCFts_SeskfNlf_EDJVKH", "1fjWvVPus_ASteaPVBT92gdEX3eGFUMmF",
-            "1PmqdV_qmFX-LeRib9MNB9R8INoJGKgU7", "1bzH-ME_wtV8f2SVBC8zW7OBOoJvdCIe2", "1kc-P0V3RldSNXSTmaBdyAxGCc_-ubR8J",
-            "1gjH9xXegIYOPIEa9XTB0B2qHJhMGbe75", "1LLjCSEK7I-odIiOm0qvkIyKHr-elOzmd", "1EjsHmL4UB4Mg0JxJ85IAk-JpSlqxlsHe",
-            "18GKg01F1eZXbyFxLERxdvgj6Ew-DAUJJ", "1On9pdKNZgIk06DWGyMbQXq4RMD2Jfmqs", "16zC71HSFXkxm9KB9LDHP6_1HYSZaAlSv",
-            "1n46l1nI7psCMreiSuoGudRq0MP2aJgN4", "1I712FoMYSzQ4rAMy1jX8eeWMpGyDEzM1", "1Nx3qsnqsZieirQih-VBN7EcZkkyORWH0",
-            "1iBSMZtc4Z0BxQ3nydIY-iE5TgKrsUajx", "1yKKE5Q7JGzoZhCw8OlDeSUxJdytb928e", "18OsjvYI1JW5dju24rP-ix8pWmIBsfSqt",
-            "1M_gMDPh15r3SIeLN72dKPeY75iAvuLGd", "1Rd6A-fABAwEg9eIibiBaE7LGQr-hxtBf", "1oruBLNByp96xsRN95hXawT_AV1pHZeeB",
-            "1S12khP_D_qlqnPSUeeBRreESJVgK9_m3", "1A3z-fE3RvJi7ESnNTTSiRzDFA8JZemRT", "1Q8SiWvzyt40hSlDcIV8i_-1spD3PfMFD",
-            "1IyhrBzyuiDaQXqfvZcQinHF80zA8Bxd-", "1JymhC6qIx-dMvlOGdX30ASptCLlglIL-", "1LNQ06KGXBQPYjoA9YynZ9HBM7nn4IG8F",
-            "11prZdRjjySaSsdCU9VFzgrAdZNV79Mfy", "1lxPe1vGpXvBEQWZBl4BRaSuGk1N_xvIR", "1gHoy4yflKfycqMGpKgxXVslG0iCF8Owy",
-            "17Xd_wM0m8AxGnY4UlRlc7yvQ5hp70xaJ", "1N_oD_-U9Hs49vVSpoFZTfNbeKacoXO4m", "1QqVNHQM7GeEan1sYaAkNsatbFKx_-znZ",
-            "10WUCzLfA2k8-cnOj0UAcfQM8um_B1Ddl", "187vtUs5JS22HH74GhHnAT6aBdUibcJPn", "1QS7ZBoxw6NBEkt5TLo649Fy69YpboC_0",
-            "18YzR9G1Lw4WUUsHSEF-xGKmM18fxNREw"
+            "1RqBfC6J0uwVOF2M0q3AbhT8-FtYirG89", "1ZFvMc1gZSX3QTd8CW7kC7hQQW6GGOeA-", "1pSuryx5DNNw4anTZCTRAUP68XrcceVHC", "1mmYJ9aftQ8VK-30za4vCsO_ZBhuhHIym", "1VlR-DVj04vvRNoQOaF2r6OtMEhf5cCQp", "1xilLXHVblUbiNWvkpbMzgbC6hoLLrlke", "13etlXHLNMstt2Vqqvn33xTUQCQENtByr", "1wzSwlRoEu8ohUoUh-1u3kik3GIGOSdCB", "1NWNlzG11Umi1XOuQlbMJKYUMTQrG6xwt", "188yK-EzbN7dNOp0N9wq4MUVO2Z50nO5e", "1-xWAZFmmg6G3DfOEcb28Jnpg4YZtO4YV", "1hLimZFEENvw5jmVKntGN9YGQhK0LOpaE", "1aA9MwZciWVMNdLPLcOpEMb9oP54gf_Eh", "1-lMWx4X22yVe3r8w5CD__gONCHudXkVN", "15fnJvJGdjtfYSCmoCVxNSPmZKTe6tDO3", "1-uO8oKE7Hg5PtXg7VXvy9CgxLXzas_qu", "1kjkszXybmxY2SuJNBqG-1zveuScNiBkM", "1uuhm3ZJdZKU0NYHD7s2fl5mghlaqBSnE", "1qQYWGNJA1wVX9jzqyXNRTvQEaQgbxCCT", "1EFpsb6S0egGq1b1oNpoNyy_GkTUmy3gL", "113hXIubqsHpfOvxesrRPtnkNHsdRZE8V", "1lFt3Ymw6-arcIPePzkOIivUSR3g-gOhA", "1FjIUsay8TsK-00hceVNizS2rJRXGvgvP", "1AAZmAnGXSHzcxSWyZ3UcyxLfCEb84nxw", "11DVFaG1cBWSPnRw0maeJ8sYG54YNZ_uW", "1PwMf2AYgCWHVugUHXdy7For1rwbtr-A8G", "1ORXnJejLTqNEI_5YQYXy5AdNLQwDCbMd", "1YWnjIvwYJgeHBvBR8UWPLrhvVCI14OAT", "1UOnhgGdwF3VZsLO1iUFyYkWFqaJKjUPW", "1RXBF3hCI9NGJF7gS1bkh0QdG8KSsEyGV", "1xBufpe0ojSPqDNSC0ToDzwXLw2hHRsx4", "133N2ALosZBRh7md_VoMYEQe_62CO28-E", "1gEnekpbuGVOKlOLSCFiFSF0xpPTp2a4e", "1kKazZd3rfJzoefw-USdyhqTNBFPpQ4uB", "1KEaRhFsPgBQQwx6bgpKafEnlYZQNu_Oi", "1cj4UgaLi6S17yFn2zeN783z3_VIQHPXU", "17kdoE95toW4pnnps8cd1--nCr3_KOOl7", "1uG42rZ40GqS5nevtevQ4DrV66yzwL0M8", "1Qv5qHXFWxpiP-rf_075fEIoP92aB95cW", "15R6-eCEq8dnoyd9gcF6IkmPQh33KXfos", "1yri2xKHS_Dhg3Nfr_g67FWMNfMoWaD3B", "1DruwgTbcEBwxkTPL4y41I8Nw5DPgCY9_", "13IAQ3SaHxgdqQNj_Sp0oJLQ8lycgdJLr"
         ];
 
         // --- 子組件 ---
 
         function BouncingTextFX({ text, count = 30 }) {
             const particlesRef = useRef([]);
-            // 在渲染前預先初始化 Ref 陣列
             if (particlesRef.current.length === 0) {
                 particlesRef.current = Array.from({ length: count }).map(() => ({
                     el: null, x: 0, y: 0, vx: 0, vy: 0, rot: 0, vr: 0
                 }));
             }
-
             useEffect(() => {
                 const w = window.innerWidth, h = window.innerHeight;
                 particlesRef.current.forEach(p => {
@@ -253,7 +232,6 @@
                     p.vx = (Math.random() - 0.5) * 16; p.vy = (Math.random() - 0.5) * 16;
                     p.rot = Math.random() * 360; p.vr = (Math.random() - 0.5) * 6;
                 });
-
                 function animate() {
                     const cw = window.innerWidth, ch = window.innerHeight;
                     particlesRef.current.forEach(p => {
@@ -267,7 +245,6 @@
                 const raf = requestAnimationFrame(animate);
                 return () => cancelAnimationFrame(raf);
             }, [count]);
-
             return (
                 <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
                     {particlesRef.current.map((p, i) => (
@@ -313,8 +290,19 @@
                     style={{ transform: isZoomed ? 'scale(0.8) translateZ(-200px)' : 'scale(1)', opacity: isZoomed ? 0.2 : 1 }}>
                     <div ref={stageRef} className="relative w-0 h-0 [transform-style:preserve-3d]">
                         {items.map((id, i) => {
-                            const row = (i % 5) - 2, col = Math.floor(i / 5);
-                            const yaw = col * (360 / (PHOTO_IDS.length / 5)), pitch = row * 15;
+                            // 重新編排 43 張照片分佈比例，消除死連結網格
+                            const rowSizes = [8, 9, 9, 9, 8]; // 8+9+9+9+8 = 43
+                            let currentRow = 0, currentIdxInRow = 0, countBefore = 0;
+                            for(let r=0; r<5; r++){
+                                if(i < countBefore + rowSizes[r]){
+                                    currentRow = r;
+                                    currentIdxInRow = i - countBefore;
+                                    break;
+                                }
+                                countBefore += rowSizes[r];
+                            }
+                            const yaw = currentIdxInRow * (360 / rowSizes[currentRow]);
+                            const pitch = (currentRow - 2) * 15;
                             return (
                                 <div key={i} className="absolute w-[210px] h-[135px] md:w-[320px] md:h-[200px] -left-[105px] md:-left-[160px] -top-[67px] md:-top-[100px] [transform-style:preserve-3d]"
                                     style={{ transform: `rotateY(${yaw}deg) rotateX(${-pitch}deg) translateZ(${radius}px)` }}>
@@ -341,7 +329,7 @@
             const [focusedImage, setFocusedImage] = useState(null);
             const [isMuted, setIsMuted] = useState(false);
             
-            // 音樂控制狀態
+            // 音樂播放狀態
             const [playlistIndex, setPlaylistIndex] = useState(0);
             const [progress, setProgress] = useState(0);
             const audioRef = useRef(null);
@@ -352,23 +340,18 @@
             const domeItems = useMemo(() => PHOTO_IDS, []);
             const [revealedGroups, setRevealedGroups] = useState([false, false, false]);
 
-            // 定義 Seek 音頻函數
             const seekAudio = (e) => {
                 if (!audioRef.current) return;
                 const rect = e.currentTarget.getBoundingClientRect();
                 const y = e.clientY - rect.top;
                 const p = 1 - (y / rect.height);
-                if (audioRef.current.duration) {
-                    audioRef.current.currentTime = audioRef.current.duration * p;
-                }
+                if (audioRef.current.duration) audioRef.current.currentTime = audioRef.current.duration * p;
             };
 
-            // 核心播放函數：實作 Playlist 自動連播與 Logic 2
             const playAudioZone = (zoneKey, songKeyOrUrl, loop = true) => {
                 let urlSource = BGM_CONFIG[songKeyOrUrl] || songKeyOrUrl;
                 let actualUrl = Array.isArray(urlSource) ? urlSource[0] : urlSource;
 
-                // 防止同音軌在同 Zone 重複觸發 (Zone Locking)
                 if (activeZoneRef.current === zoneKey && currentFileRef.current === actualUrl && audioRef.current && !audioRef.current.paused) return;
                 
                 if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
@@ -376,11 +359,9 @@
 
                 const audio = new Audio(actualUrl);
                 audio.muted = isMuted; audio.volume = 1;
-                
-                // 畫廊播放清單與數組序列強制不使用原生 loop，由 onended 接手邏輯
                 audio.loop = (zoneKey === 'gallery_playlist' || Array.isArray(urlSource)) ? false : loop;
                 
-                // Logic 2 & Slide 20 專屬規則：從 0:03 起播
+                // Logic 2 & Slide 20 規則
                 if (songKeyOrUrl === 'breathe' || songKeyOrUrl === 'masterclass' || actualUrl.includes('breathe') || actualUrl.includes('masterclass')) {
                     audio.currentTime = 3;
                 }
@@ -391,25 +372,23 @@
 
                 audio.onended = () => {
                     if (zoneKey === 'gallery_playlist') {
-                        // Logic 3: masterclass 結束後回到 go (循環 Playlist)
+                        // Logic 3: Playlist 循環回起點
                         const nextIdx = (playlistIndex + 1) % activePlaylist.length;
                         handleGallerySongChange(nextIdx);
                     } else if (Array.isArray(urlSource) && urlSource.length > 1) {
-                        // 處理 Sequence (如 Game 2 的競飲音軌)
-                        let currentIdxInArr = urlSource.indexOf(actualUrl);
-                        let nextInSeq = (currentIdxInArr + 1) % urlSource.length;
+                        let curInArr = urlSource.indexOf(actualUrl);
+                        let nextInSeq = (curInArr + 1) % urlSource.length;
                         playAudioZone(zoneKey, urlSource[nextInSeq], loop);
                     }
                 };
 
-                audio.play().catch(e => console.log("Audio Play Blocked:", e));
+                audio.play().catch(e => console.log("Blocked:", e));
                 audioRef.current = audio;
                 activeZoneRef.current = zoneKey;
                 currentFileRef.current = actualUrl;
             };
 
             const handleGallerySongChange = (idx) => { 
-                // 清除 Zone 鎖定以強行播放新選擇的歌曲
                 activeZoneRef.current = null; 
                 currentFileRef.current = null; 
                 setPlaylistIndex(idx);
@@ -419,15 +398,9 @@
                 setDir(n > slide ? 'next' : 'prev'); 
                 setSlide(n); 
                 setIsZoomed(false);
-                
-                // 畫廊區域切換與隔離邏輯
+                // 進入新畫廊重置 Playlist (Logic 1)
                 if ([11, 13, 15].includes(n)) {
-                    // 若是從外部進入，重置到首曲；若是畫廊間切換，則不動作以保持 playlistIndex (Carry Over)
-                    // 備註：若要嚴格不 Carry Over，可將 if 改為 setPlaylistIndex(0)
-                    if (![11, 13, 15].includes(slide)) {
-                        setPlaylistIndex(0);
-                    }
-                    // 強制重置 Zone 以觸發 useEffect 重新載入對應 playlistIndex 的曲目
+                    if (![11, 13, 15].includes(slide)) { setPlaylistIndex(0); }
                     activeZoneRef.current = null;
                 }
             };
@@ -481,7 +454,7 @@
                                     <div onClick={() => { const n = [...revealedGroups]; n[idx] = true; setRevealedGroups(n); }} 
                                          className={`flex-grow bg-white/5 border border-white/10 p-12 rounded-[40px] cursor-pointer transition-all duration-1000 flex flex-col justify-center items-center shadow-2xl ${revealedGroups[idx] ? 'blur-0 bg-white/10' : 'blur-2xl'}`}>
                                         <p className="text-yellow-500 text-2xl font-bold uppercase mb-4">Group {g}</p>
-                                        <p className="text-white text-4xl md:text-6xl font-black">{groupData[idx]}</p>
+                                        <p className="text-white text-3xl md:text-5xl font-black text-center">{groupData[idx]}</p>
                                     </div>
                                     <div className="mt-8 text-emerald-500 animate-bounce flex justify-center text-6xl">↓</div>
                                     <div className="w-full bg-white/5 border border-white/20 py-8 rounded-3xl text-center mt-4 shadow-lg"><span className="text-3xl md:text-5xl font-black text-white uppercase opacity-90 block">晉級</span><span className="text-sm md:text-lg text-white/50 uppercase font-bold tracking-tighter">PROMOTED</span></div>
@@ -530,7 +503,6 @@
             useEffect(() => {
                 if (!isReady || !interacted) return;
                 const i = slide;
-                // 分頁音樂管理邏輯
                 if (i === 0) playAudioZone('d1', 'go');
                 else if (i === 1) playAudioZone('sl', 'welcome');
                 else if (i === 2) playAudioZone('sp', 'boss');
@@ -584,12 +556,9 @@
                         
                         {(slide === 11 || slide === 13 || slide === 15) && interacted && (
                             <div className="liquid-glass-player">
-                                {activePlaylist.map((k, idx) => {
-                                    // 按鈕高亮邏輯：比對 playlistIndex
-                                    return (
-                                        <button key={k} onClick={() => handleGallerySongChange(idx)} className={`song-btn ${playlistIndex === idx ? 'active' : ''}`}>{k === 'go' ? 'Go' : k === 'breathe' ? 'Air' : 'MC'}</button>
-                                    );
-                                })}
+                                {activePlaylist.map((k, idx) => (
+                                    <button key={k} onClick={() => handleGallerySongChange(idx)} className={`song-btn ${playlistIndex === idx ? 'active' : ''}`}>{k === 'go' ? 'Go' : k === 'breathe' ? 'Air' : 'MC'}</button>
+                                ))}
                                 <div className="seekbar-container" onClick={seekAudio}>
                                     <div className="seekbar-fill" style={{ height: `${progress}%` }} />
                                 </div>
