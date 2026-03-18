@@ -79,14 +79,6 @@
             filter: drop-shadow(0 0 50px rgba(168, 85, 247, 0.9));
         }
 
-        .text-emerald-glow {
-            background: linear-gradient(to bottom, #ffffff, #6ee7b7, #10b981);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 40px rgba(16, 185, 129, 0.6));
-        }
-
-        /* Slide Transition Animations */
         .slide-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
         .slide-item {
             position: absolute; inset: 0;
@@ -115,34 +107,40 @@
         .is-revealed { filter: blur(0px); pointer-events: auto; }
 
         /* Liquid Glass Controller */
-        .liquid-glass-panel {
+        .liquid-glass-player {
             position: fixed; top: 50%; right: 30px; transform: translateY(-50%);
             background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px);
+            backdrop-filter: blur(25px);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 24px;
-            padding: 20px 15px;
+            border-radius: 30px;
+            padding: 25px 20px;
             z-index: 1000;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            display: flex; flex-direction: column; gap: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            display: flex; flex-direction: column; gap: 20px;
+            width: 90px; align-items: center;
         }
         
         .song-btn {
-            width: 55px; height: 55px;
+            width: 60px; height: 60px;
             border-radius: 18px;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; transition: all 0.3s;
-            font-size: 11px; font-weight: bold; color: rgba(255,255,255,0.4);
+            font-size: 11px; font-weight: bold; color: rgba(255,255,255,0.3);
             text-transform: uppercase;
         }
-        .song-btn:hover { background: rgba(255, 255, 255, 0.1); transform: scale(1.05); }
-        .song-btn.active {
-            background: rgba(16, 185, 129, 0.2);
-            border-color: rgba(16, 185, 129, 0.6);
-            color: #10b981;
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        .song-btn.active { background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+
+        .seekbar-container {
+            width: 6px; height: 180px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px; position: relative;
+            cursor: pointer; overflow: hidden;
+        }
+        .seekbar-fill {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: #10b981; transition: height 0.1s linear;
         }
 
         /* 加碼特效 */
@@ -184,7 +182,7 @@
             <img src="Logo.png" alt="Logo" class="w-32 h-32 object-contain" />
             <div class="flex flex-col items-center">
                 <div class="loader-bar-bg"><div id="loader-fill" class="loader-bar-fill"></div></div>
-                <div id="loader-text" class="text-[10px] text-emerald-500/60 mt-4 tracking-widest uppercase font-bold animate-pulse">Syncing Ceremony Assets...</div>
+                <div id="loader-text" class="text-[10px] text-emerald-500/60 mt-4 tracking-widest uppercase font-bold animate-pulse">Syncing Ceremonial Assets...</div>
             </div>
         </div>
     </div>
@@ -237,9 +235,13 @@
         // --- 子組件 ---
 
         function BouncingTextFX({ text, count = 30 }) {
-            const particlesRef = useRef(Array.from({ length: count }).map(() => ({
-                el: null, x: 0, y: 0, vx: 0, vy: 0, rot: 0, vr: 0
-            })));
+            const particlesRef = useRef([]);
+            // 初始化粒子數據，防止 undefined 錯誤
+            if (particlesRef.current.length === 0) {
+                particlesRef.current = Array.from({ length: count }).map(() => ({
+                    el: null, x: 0, y: 0, vx: 0, vy: 0, rot: 0, vr: 0
+                }));
+            }
 
             useEffect(() => {
                 const w = window.innerWidth, h = window.innerHeight;
@@ -252,7 +254,7 @@
                     p.vr = (Math.random() - 0.5) * 6;
                 });
 
-                const animate = () => {
+                function animate() {
                     const cw = window.innerWidth, ch = window.innerHeight;
                     particlesRef.current.forEach(p => {
                         p.x += p.vx; p.y += p.vy; p.rot += p.vr;
@@ -263,15 +265,15 @@
                         }
                     });
                     requestAnimationFrame(animate);
-                };
+                }
                 const raf = requestAnimationFrame(animate);
                 return () => cancelAnimationFrame(raf);
             }, [count]);
 
             return (
                 <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-                    {Array.from({ length: count }).map((_, i) => (
-                        <div key={i} ref={el => { if(el) particlesRef.current[i].el = el; }} className="bouncing-text-fx text-[6vw] md:text-[4vw]">
+                    {particlesRef.current.map((p, i) => (
+                        <div key={i} ref={el => { if(el) p.el = el; }} className="bouncing-text-fx text-[6vw] md:text-[4vw]">
                             {text}
                         </div>
                     ))}
@@ -297,24 +299,23 @@
                     timer = setTimeout(() => setIsZoomed(false), 6000);
                 } else {
                     timer = setTimeout(() => {
-                        const randomId = items[Math.floor(Math.random() * items.length)];
-                        setFocusedImage({ id: randomId });
+                        setFocusedImage({ id: items[Math.floor(Math.random() * items.length)] });
                         setIsZoomed(true);
                     }, 5000);
                 }
                 return () => clearTimeout(timer);
-            }, [isZoomed, isActive, items]);
+            }, [isZoomed, isActive, items, setIsZoomed, setFocusedImage]);
 
             useEffect(() => {
                 let raf;
-                const animate = () => {
+                function animateDome() {
                     if (!isZoomed && stageRef.current) {
                         rotationRef.current += 0.12; 
                         stageRef.current.style.transform = `translate3d(0, 0, ${-radius}px) rotateY(${rotationRef.current}deg)`;
                     }
-                    raf = requestAnimationFrame(animate);
-                };
-                raf = requestAnimationFrame(animate);
+                    raf = requestAnimationFrame(animateDome);
+                }
+                raf = requestAnimationFrame(animateDome);
                 return () => cancelAnimationFrame(raf);
             }, [isZoomed, radius]);
 
@@ -323,10 +324,8 @@
                     style={{ transform: isZoomed ? 'scale(0.8) translateZ(-200px)' : 'scale(1)', opacity: isZoomed ? 0.2 : 1 }}>
                     <div ref={stageRef} className="relative w-0 h-0 [transform-style:preserve-3d]">
                         {items.map((id, i) => {
-                            const rowIndex = (i % 5) - 2;
-                            const colIndex = Math.floor(i / 5);
-                            const yaw = colIndex * (360 / (PHOTO_IDS.length / 5));
-                            const pitch = rowIndex * 15;
+                            const row = (i % 5) - 2, col = Math.floor(i / 5);
+                            const yaw = col * (360 / (PHOTO_IDS.length / 5)), pitch = row * 15;
                             return (
                                 <div key={i} className="absolute w-[210px] h-[135px] md:w-[320px] md:h-[200px] -left-[105px] md:-left-[160px] -top-[67px] md:-top-[100px] [transform-style:preserve-3d]"
                                     style={{ transform: `rotateY(${yaw}deg) rotateX(${-pitch}deg) translateZ(${radius}px)` }}>
@@ -342,7 +341,7 @@
             );
         }
 
-        // --- 3. 主程序 ---
+        // --- 4. 主應用程序 ---
 
         function App() {
             const [slide, setSlide] = useState(0);
@@ -352,59 +351,64 @@
             const [isZoomed, setIsZoomed] = useState(false);
             const [focusedImage, setFocusedImage] = useState(null);
             const [isMuted, setIsMuted] = useState(false);
-            const [activeGallerySong, setActiveGallerySong] = useState('go');
-
-            const audios = useRef({ instance: null });
-            const activeZoneRef = useRef(null);
-            const currentFileRef = useRef(null);
-
+            
+            const [playlistIndex, setPlaylistIndex] = useState(0);
+            const [progress, setProgress] = useState(0);
+            const audioRef = useRef(null);
+            const activePlaylist = useMemo(() => ['go', 'breathe', 'masterclass'], []);
             const domeItems = useMemo(() => PHOTO_IDS, []);
 
-            const playAudioZone = (zoneKey, fileOrFiles, loop = true) => {
-                const file = Array.isArray(fileOrFiles) ? fileOrFiles[0] : fileOrFiles;
-                if (activeZoneRef.current === zoneKey && currentFileRef.current === file) return;
-                
-                if (audios.current.instance) {
-                    audios.current.instance.pause();
-                    audios.current.instance = null;
-                }
+            // Game 2 揭曉狀態
+            const [revealedGroups, setRevealedGroups] = useState([false, false, false]);
 
+            const playPlaylistSong = (index) => {
+                if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
                 if (!interacted) return;
+                
+                const songKey = activePlaylist[index];
+                const audio = new Audio(BGM_CONFIG[songKey]);
+                audio.muted = isMuted; audio.volume = 1;
+                
+                // Logic 2: breathe & masterclass start at 3s
+                if (songKey === 'breathe' || songKey === 'masterclass') audio.currentTime = 3;
+
+                audio.ontimeupdate = () => setProgress((audio.currentTime / audio.duration) * 100);
+                audio.onended = () => {
+                    const next = (index + 1) % activePlaylist.length;
+                    setPlaylistIndex(next);
+                    playPlaylistSong(next);
+                };
+                audio.play().catch(()=>{});
+                audioRef.current = audio;
+            };
+
+            const seekAudio = (e) => {
+                if (!audioRef.current) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const y = e.clientY - rect.top;
+                const p = 1 - (y / rect.height);
+                audioRef.current.currentTime = audioRef.current.duration * p;
+            };
+
+            const playSingleAudio = (fileOrFiles, loop = true) => {
+                if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+                if (!interacted) return;
+                const file = Array.isArray(fileOrFiles) ? fileOrFiles[0] : fileOrFiles;
                 const audio = new Audio(file);
                 audio.muted = isMuted; audio.volume = 1; audio.loop = loop;
                 audio.play().catch(()=>{});
-
-                if (Array.isArray(fileOrFiles) && fileOrFiles.length > 1) {
-                    let idx = 0;
-                    audio.onended = () => {
-                        idx = (idx + 1) % fileOrFiles.length;
-                        audio.src = fileOrFiles[idx]; audio.play().catch(()=>{});
-                    };
-                }
-                audios.current.instance = audio;
-                activeZoneRef.current = zoneKey;
-                currentFileRef.current = file;
+                audioRef.current = audio;
             };
 
-            const handleGallerySongChange = (k) => { 
-                setActiveGallerySong(k); 
-                activeZoneRef.current = null; 
-                currentFileRef.current = null; 
-            };
-
-            const changeSlide = (n) => { 
-                setDir(n > slide ? 'next' : 'prev'); 
-                setSlide(n); 
-                setIsZoomed(false);
-            };
+            const changeSlide = (n) => { setDir(n > slide ? 'next' : 'prev'); setSlide(n); setIsZoomed(false); };
 
             const allSlides = [
                 <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 0} />,
                 <div className="flex flex-col items-center justify-center h-full w-full px-4 text-center">
-                    <div className="flex-grow flex flex-col items-center justify-center gap-8 md:gap-16">
+                    <div className="flex flex-col items-center justify-center gap-12 md:gap-16">
                         <img src="Logo.png" alt="Logo" className="w-full max-w-4xl h-auto drop-shadow-2xl" />
                         <div className="flex flex-col gap-2">
-                            <h1 className="text-4xl md:text-7xl font-light text-white-gold tracking-widest uppercase leading-none">Annual Dinner</h1>
+                            <h1 className="text-4xl md:text-7xl font-light text-white-gold tracking-widest uppercase">Annual Dinner</h1>
                             <div className="text-orange-300 text-xl md:text-3xl font-medium tracking-[0.5em] mt-4">2 0 2 5</div>
                         </div>
                         <div className="flex flex-col gap-6 text-[8.5vw] md:text-[5.5rem] font-black text-white-gold drop-shadow-2xl mt-4">
@@ -416,9 +420,7 @@
                 <div className="flex flex-col h-full items-center justify-center gap-12 px-6">
                     <div className="text-center"><h1 className="text-6xl md:text-9xl font-bold text-white-gold tracking-[0.5em] uppercase">致詞</h1><span className="text-emerald-400 text-2xl md:text-4xl font-light mt-2 block uppercase">Speech</span></div>
                     <div className="flex flex-col items-center gap-10 md:gap-16 text-[8vw] md:text-8xl font-medium text-white drop-shadow-2xl text-center">
-                        <span className="whitespace-nowrap">Morris & Mikey</span>
-                        <div className="h-[2px] w-48 md:w-96 bg-white/20" />
-                        <span className="whitespace-nowrap">Teddy & Kanji</span>
+                        <span className="whitespace-nowrap">Morris & Mikey</span><div className="h-[2px] w-48 md:w-96 bg-white/20" /><span>Teddy & Kanji</span>
                     </div>
                 </div>,
                 <div className="h-full text-center px-6 flex flex-col justify-center items-center"><h2 className="text-6xl md:text-[9rem] font-bold text-white-gold tracking-[0.15em] mb-4 uppercase">長期服務獎</h2><span className="text-emerald-500/80 text-2xl md:text-5xl font-light uppercase italic tracking-widest">Long Service Award</span></div>,
@@ -436,17 +438,29 @@
                 </div>,
                 <div className="h-full text-center px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24">
                     <div className="w-full mb-16 border-b border-white/10 pb-8 flex justify-between items-end text-left"><span className="text-emerald-400 text-3xl md:text-7xl font-bold uppercase">Game 1</span><span className="text-white text-3xl md:text-7xl font-black text-right uppercase">被抽中的枱號</span></div>
-                    <div className="flex flex-col items-center gap-10"><p className="text-4xl md:text-7xl font-bold text-white opacity-90 uppercase">被抽中的枱號，每人皆可獲得</p><p className="text-xl md:text-4xl text-white/40 uppercase tracking-widest italic">Every guest wins when their table number is drawn!</p><span className="text-purple-glow font-black text-9xl md:text-[18rem] mt-12 shadow-2xl">豐富獎品</span><span className="text-purple-400/60 text-3xl md:text-7xl uppercase font-bold tracking-widest italic mt-4 uppercase">Fabulous Prizes</span></div>
+                    <div className="flex flex-col items-center gap-10 w-full"><p className="text-4xl md:text-7xl font-bold text-white opacity-90 uppercase">被抽中的枱號，每人皆可獲得</p><p className="text-xl md:text-4xl text-white/40 uppercase tracking-widest italic">Every guest wins when their table number is drawn!</p><span className="text-purple-glow font-black text-9xl md:text-[18rem] mt-12 shadow-2xl">豐富獎品</span><span className="text-purple-400/60 text-3xl md:text-7xl uppercase font-bold tracking-widest italic mt-4 uppercase">Fabulous Prizes</span></div>
                 </div>,
                 <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 11} />,
                 <div className="h-full px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24">
                     <div className="w-full mb-16 border-b border-white/10 pb-8 flex justify-between items-end"><span className="text-emerald-400 text-3xl md:text-7xl font-bold tracking-wide uppercase">Game 2</span><span className="text-white text-5xl md:text-[10rem] font-bold uppercase text-right">競飲</span></div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-16 mb-12 w-full h-[300px] md:h-[500px]">
-                        {[1,2,3].map(idx => (<div key={idx} className="flex flex-col h-full flex-1 relative"><div className="flex-grow bg-white/5 border border-white/10 p-12 rounded-[40px] cursor-pointer transition-all duration-1000 flex flex-col justify-center items-center blur-2xl active:blur-0 shadow-2xl"><p className="text-white text-4xl md:text-6xl font-black uppercase">Revealing Group {idx}</p></div><div className="mt-8 text-emerald-500 animate-bounce flex justify-center text-6xl">↓</div><div className="w-full bg-white/5 border border-white/20 py-8 rounded-3xl text-center mt-4 shadow-lg"><span className="text-3xl md:text-5xl font-black text-white uppercase opacity-90 block">晉級</span><span className="text-sm md:text-lg text-white/50 uppercase font-bold tracking-tighter">PROMOTED</span></div></div>))}
+                        {[1,2,3].map((g, idx) => {
+                            const groupData = ["2, 5, 8, 11, 15, 18", "1, 6, 9, 12, 16, 19", "3, 7, 10, 13, 17"];
+                            return (
+                                <div key={idx} className="flex flex-col h-full flex-1 relative">
+                                    <div onClick={() => { const n = [...revealedGroups]; n[idx] = true; setRevealedGroups(n); }} 
+                                         className={`flex-grow bg-white/5 border border-white/10 p-12 rounded-[40px] cursor-pointer transition-all duration-1000 flex flex-col justify-center items-center shadow-2xl ${revealedGroups[idx] ? 'blur-0 bg-white/10' : 'blur-2xl'}`}>
+                                        <p className="text-yellow-500 text-xl font-bold uppercase mb-4">Group {g}</p>
+                                        <p className="text-white text-3xl md:text-5xl font-black">{groupData[idx]}</p>
+                                    </div>
+                                    <div className="mt-8 text-emerald-500 animate-bounce flex justify-center text-6xl">↓</div>
+                                    <div className="w-full bg-white/5 border border-white/20 py-8 rounded-3xl text-center mt-4 shadow-lg"><span className="text-3xl md:text-5xl font-black text-white uppercase opacity-90 block">晉級</span><span className="text-sm md:text-lg text-white/50 uppercase font-bold tracking-tighter">PROMOTED</span></div>
+                                </div>
+                            );
+                        })}
                     </div>
                     <div className="mt-24 flex flex-col items-center px-16 py-12 md:px-64 md:py-20 bg-gradient-to-r from-emerald-600/30 to-emerald-400/30 border-2 border-emerald-400/60 rounded-[60px] shadow-[0_0_120px_rgba(16,185,129,0.2)]">
-                        <span className="text-6xl md:text-[12rem] font-black text-purple-glow uppercase leading-none">冠・亞・季</span>
-                        <span className="text-3xl md:text-6xl text-white/80 font-medium italic uppercase mt-10">Champion • 1st • 2nd Runner-up</span>
+                        <span className="text-6xl md:text-[12rem] font-black text-purple-glow uppercase leading-none">冠・亞・季</span><span className="text-3xl md:text-6xl text-white/80 font-medium italic uppercase mt-10">Champion • 1st • 2nd Runner-up</span>
                     </div>
                 </div>,
                 <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 13} />,
@@ -486,27 +500,20 @@
             useEffect(() => {
                 if (!isReady || !interacted) return;
                 const i = slide;
-                if (i === 0) playAudioZone('d1', BGM_CONFIG.go);
-                else if (i === 1) playAudioZone('sl', BGM_CONFIG.welcome);
-                else if (i === 2) playAudioZone('sp', BGM_CONFIG.boss);
-                else if (i >= 3 && i <= 7) playAudioZone('sr', BGM_CONFIG.misshk);
-                else if (i >= 8 && i <= 10) playAudioZone('g1', BGM_CONFIG.ukulele);
-                else if (i === 11 || i === 13 || i === 15) playAudioZone('dome_int', BGM_CONFIG[activeGallerySong]);
-                else if (i === 12) playAudioZone('g2', BGM_CONFIG.game2Seq);
-                else if (i === 14) playAudioZone('g3', BGM_CONFIG.mark6);
-                else if (i === 16) playAudioZone('dr', BGM_CONFIG.draw);
-                else if (i === 17) playAudioZone('s1', BGM_CONFIG.sb1);
-                else if (i === 18) playAudioZone('s2', BGM_CONFIG.sb2);
-                else if (i === 19) playAudioZone('final', BGM_CONFIG.breathe);
-                else {
-                    if (audios.current.instance) {
-                        audios.current.instance.pause();
-                        audios.current.instance = null;
-                    }
-                    activeZoneRef.current = null;
-                    currentFileRef.current = null;
-                }
-            }, [slide, interacted, activeGallerySong, isReady]);
+                if (i === 0) playSingleAudio(BGM_CONFIG.go);
+                else if (i === 1) playSingleAudio(BGM_CONFIG.welcome);
+                else if (i === 2) playSingleAudio(BGM_CONFIG.boss);
+                else if (i >= 3 && i <= 7) playSingleAudio(BGM_CONFIG.misshk);
+                else if (i >= 8 && i <= 10) playSingleAudio(BGM_CONFIG.ukulele);
+                else if (i === 11 || i === 13 || i === 15) playPlaylistSong(playlistIndex);
+                else if (i === 12) playSingleAudio(BGM_CONFIG.game2Seq);
+                else if (i === 14) playSingleAudio(BGM_CONFIG.mark6);
+                else if (i === 16) playSingleAudio(BGM_CONFIG.draw);
+                else if (i === 17) playSingleAudio(BGM_CONFIG.sb1);
+                else if (i === 18) playSingleAudio(BGM_CONFIG.sb2);
+                else if (i === 19) playSingleAudio(BGM_CONFIG.breathe);
+                else { if (audioRef.current) audioRef.current.pause(); audioRef.current = null; }
+            }, [slide, interacted, isReady]);
 
             useEffect(() => {
                 let imgL = 0, audL = 0;
@@ -514,10 +521,8 @@
                 const audU = Object.values(BGM_CONFIG).flat();
                 const total = imgU.length + audU.length;
                 const check = () => {
-                    if (document.getElementById('loader-fill')) {
-                        const prog = ((imgL + audL) / total) * 100;
-                        document.getElementById('loader-fill').style.width = prog + '%';
-                    }
+                    const fill = document.getElementById('loader-fill');
+                    if (fill) fill.style.width = ((imgL + audL) / total) * 100 + '%';
                     if (imgL + audL >= total) {
                         const pre = document.getElementById('preloader'); if (pre) pre.style.opacity = '0';
                         setTimeout(() => { if (pre) pre.style.display = 'none'; setIsReady(true); }, 1000);
@@ -525,7 +530,7 @@
                 };
                 imgU.forEach(u => { const img = new Image(); img.src = u; img.onload = img.onerror = () => { imgL++; check(); }; });
                 audU.forEach(u => { const a = new Audio(u); a.oncanplaythrough = a.onerror = () => { audL++; check(); }; a.load(); });
-                setTimeout(() => { if (!isReady) setIsReady(true); }, 40000);
+                setTimeout(() => { if (!isReady) setIsReady(true); }, 45000);
             }, []);
 
             if (!isReady) return null;
@@ -536,7 +541,7 @@
                         <div className="interaction-overlay" onClick={() => setInteracted(true)}>
                             <img src="Logo.png" alt="Logo" className="w-48 h-48 object-contain mb-8 animate-pulse" />
                             <h2 className="text-3xl font-bold tracking-[0.5em] text-white-gold mb-4 uppercase">歡迎進入</h2>
-                            <p className="text-emerald-400 tracking-[0.3em] animate-bounce">TAP TO START CEREMONY</p>
+                            <p className="text-emerald-400 tracking-[0.3em] animate-bounce text-center">TAP TO START CEREMONY</p>
                         </div>
                     )}
                     <div className={`content-wrapper h-full w-full ${!interacted ? 'is-blurred' : 'is-revealed'}`}>
@@ -544,10 +549,13 @@
                         <div className="slide-num-label">{slide + 1} / {allSlides.length}</div>
                         
                         {(slide === 11 || slide === 13 || slide === 15) && interacted && (
-                            <div className="liquid-glass-panel">
-                                <button onClick={() => handleGallerySongChange('go')} className={`song-btn ${activeGallerySong === 'go' ? 'active' : ''}`}>Go</button>
-                                <button onClick={() => handleGallerySongChange('breathe')} className={`song-btn ${activeGallerySong === 'breathe' ? 'active' : ''}`}>Air</button>
-                                <button onClick={() => handleGallerySongChange('masterclass')} className={`song-btn ${activeGallerySong === 'masterclass' ? 'active' : ''}`}>MC</button>
+                            <div className="liquid-glass-player">
+                                {activePlaylist.map((k, idx) => (
+                                    <button key={k} onClick={() => playPlaylistSong(idx)} className={`song-btn ${playlistIndex === idx ? 'active' : ''}`}>{k === 'go' ? 'Go' : k === 'breathe' ? 'Air' : 'MC'}</button>
+                                ))}
+                                <div className="seekbar-container" onClick={seekAudio}>
+                                    <div className="seekbar-fill" style={{ height: `${progress}%` }} />
+                                </div>
                             </div>
                         )}
 
