@@ -137,7 +137,13 @@
             font-size: 11px; font-weight: bold; color: rgba(255,255,255,0.3);
             text-transform: uppercase;
         }
-        .song-btn.active { background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+        .song-btn:hover { background: rgba(255, 255, 255, 0.1); transform: scale(1.05); }
+        .song-btn.active {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: #10b981;
+            color: #10b981;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        }
 
         .seekbar-container {
             width: 6px; height: 180px;
@@ -189,7 +195,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- 1. 配置與數據 ---
         const BGM_CONFIG = {
             go: 'music/go.mp3',
             welcome: 'music/welcoming.mp3',
@@ -230,15 +235,17 @@
             "18YzR9G1Lw4WUUsHSEF-xGKmM18fxNREw"
         ];
 
-        // --- 2. 子組件 ---
+        // --- 子組件 ---
 
         function BouncingTextFX({ text, count = 30 }) {
             const particlesRef = useRef([]);
+            // 在渲染前預先初始化 Ref 陣列
             if (particlesRef.current.length === 0) {
                 particlesRef.current = Array.from({ length: count }).map(() => ({
                     el: null, x: 0, y: 0, vx: 0, vy: 0, rot: 0, vr: 0
                 }));
             }
+
             useEffect(() => {
                 const w = window.innerWidth, h = window.innerHeight;
                 particlesRef.current.forEach(p => {
@@ -246,6 +253,7 @@
                     p.vx = (Math.random() - 0.5) * 16; p.vy = (Math.random() - 0.5) * 16;
                     p.rot = Math.random() * 360; p.vr = (Math.random() - 0.5) * 6;
                 });
+
                 function animate() {
                     const cw = window.innerWidth, ch = window.innerHeight;
                     particlesRef.current.forEach(p => {
@@ -259,6 +267,7 @@
                 const raf = requestAnimationFrame(animate);
                 return () => cancelAnimationFrame(raf);
             }, [count]);
+
             return (
                 <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
                     {particlesRef.current.map((p, i) => (
@@ -321,7 +330,7 @@
             );
         }
 
-        // --- 3. 主程序 ---
+        // --- 4. 主程序 ---
 
         function App() {
             const [slide, setSlide] = useState(0);
@@ -343,20 +352,35 @@
             const domeItems = useMemo(() => PHOTO_IDS, []);
             const [revealedGroups, setRevealedGroups] = useState([false, false, false]);
 
-            // 核心播放函數
-            const playAudioZone = (zoneKey, songKeyOrUrl, loop = true) => {
-                const url = BGM_CONFIG[songKeyOrUrl] || songKeyOrUrl;
-                const actualUrl = Array.isArray(url) ? url[0] : url;
+            // 定義 Seek 音頻函數
+            const seekAudio = (e) => {
+                if (!audioRef.current) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const y = e.clientY - rect.top;
+                const p = 1 - (y / rect.height);
+                if (audioRef.current.duration) {
+                    audioRef.current.currentTime = audioRef.current.duration * p;
+                }
+            };
 
-                if (activeZoneRef.current === zoneKey && currentFileRef.current === actualUrl) return;
+            // 核心播放函數：實作 Playlist 自動連播與 Logic 2
+            const playAudioZone = (zoneKey, songKeyOrUrl, loop = true) => {
+                let urlSource = BGM_CONFIG[songKeyOrUrl] || songKeyOrUrl;
+                let actualUrl = Array.isArray(urlSource) ? urlSource[0] : urlSource;
+
+                // 防止同音軌在同 Zone 重複觸發 (Zone Locking)
+                if (activeZoneRef.current === zoneKey && currentFileRef.current === actualUrl && audioRef.current && !audioRef.current.paused) return;
                 
                 if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
                 if (!interacted) return;
 
                 const audio = new Audio(actualUrl);
-                audio.muted = isMuted; audio.volume = 1; audio.loop = loop;
+                audio.muted = isMuted; audio.volume = 1;
                 
-                // Logic 2 & Slide 20 專屬規則
+                // 畫廊播放清單與數組序列強制不使用原生 loop，由 onended 接手邏輯
+                audio.loop = (zoneKey === 'gallery_playlist' || Array.isArray(urlSource)) ? false : loop;
+                
+                // Logic 2 & Slide 20 專屬規則：從 0:03 起播
                 if (songKeyOrUrl === 'breathe' || songKeyOrUrl === 'masterclass' || actualUrl.includes('breathe') || actualUrl.includes('masterclass')) {
                     audio.currentTime = 3;
                 }
@@ -367,46 +391,43 @@
 
                 audio.onended = () => {
                     if (zoneKey === 'gallery_playlist') {
+                        // Logic 3: masterclass 結束後回到 go (循環 Playlist)
                         const nextIdx = (playlistIndex + 1) % activePlaylist.length;
                         handleGallerySongChange(nextIdx);
-                    } else if (Array.isArray(url) && url.length > 1) {
-                        // 處理 Sequence (如 Game 2)
-                        let nextInSeq = (url.indexOf(audio.src.split('/').pop()) + 1) % url.length;
-                        audio.src = url[nextInSeq]; audio.play().catch(()=>{});
+                    } else if (Array.isArray(urlSource) && urlSource.length > 1) {
+                        // 處理 Sequence (如 Game 2 的競飲音軌)
+                        let currentIdxInArr = urlSource.indexOf(actualUrl);
+                        let nextInSeq = (currentIdxInArr + 1) % urlSource.length;
+                        playAudioZone(zoneKey, urlSource[nextInSeq], loop);
                     }
                 };
 
-                audio.play().catch(e => console.log("Blocked:", e));
+                audio.play().catch(e => console.log("Audio Play Blocked:", e));
                 audioRef.current = audio;
                 activeZoneRef.current = zoneKey;
                 currentFileRef.current = actualUrl;
             };
 
             const handleGallerySongChange = (idx) => { 
-                // 強制重置 Zone 鎖定以切換歌曲
+                // 清除 Zone 鎖定以強行播放新選擇的歌曲
                 activeZoneRef.current = null; 
                 currentFileRef.current = null; 
                 setPlaylistIndex(idx);
-            };
-
-            const seekAudio = (e) => {
-                if (!audioRef.current) return;
-                const rect = e.currentTarget.getBoundingClientRect();
-                const y = e.clientY - rect.top;
-                const p = 1 - (y / rect.height);
-                audioRef.current.currentTime = audioRef.current.duration * p;
             };
 
             const changeSlide = (n) => { 
                 setDir(n > slide ? 'next' : 'prev'); 
                 setSlide(n); 
                 setIsZoomed(false);
-                // 畫廊切換時重置 Playlist 到第一首
+                
+                // 畫廊區域切換與隔離邏輯
                 if ([11, 13, 15].includes(n)) {
+                    // 若是從外部進入，重置到首曲；若是畫廊間切換，則不動作以保持 playlistIndex (Carry Over)
+                    // 備註：若要嚴格不 Carry Over，可將 if 改為 setPlaylistIndex(0)
                     if (![11, 13, 15].includes(slide)) {
                         setPlaylistIndex(0);
                     }
-                    // 強制重置 Zone 以觸發不同畫廊間的音樂重啟 (防止 carry over)
+                    // 強制重置 Zone 以觸發 useEffect 重新載入對應 playlistIndex 的曲目
                     activeZoneRef.current = null;
                 }
             };
@@ -447,7 +468,7 @@
                 </div>,
                 <div className="h-full text-center px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24">
                     <div className="w-full mb-16 border-b border-white/10 pb-8 flex justify-between items-end text-left"><span className="text-emerald-400 text-3xl md:text-7xl font-bold uppercase">Game 1</span><span className="text-white text-3xl md:text-7xl font-black text-right uppercase">被抽中的枱號</span></div>
-                    <div className="flex flex-col items-center gap-10 w-full"><p className="text-4xl md:text-7xl font-bold text-white opacity-90 uppercase">被抽中的枱號，每人皆可獲得</p><p className="text-xl md:text-4xl text-white/40 uppercase tracking-widest italic">Every guest wins when their table number is drawn!</p><span className="text-purple-glow font-black text-9xl md:text-[18rem] mt-12 shadow-2xl">豐富獎品</span><span className="text-purple-400/60 text-3xl md:text-7xl uppercase font-bold tracking-widest italic mt-4 uppercase">Fabulous Prizes</span></div>
+                    <div className="flex flex-col items-center gap-12 w-full"><p className="text-4xl md:text-7xl font-bold text-white opacity-90 uppercase">被抽中的枱號，每人皆可獲得</p><p className="text-xl md:text-4xl text-white/40 uppercase tracking-widest italic">Every guest wins when their table number is drawn!</p><span className="text-purple-glow font-black text-9xl md:text-[18rem] mt-12 shadow-2xl">豐富獎品</span><span className="text-purple-400/60 text-3xl md:text-7xl uppercase font-bold tracking-widest italic mt-4 uppercase">Fabulous Prizes</span></div>
                 </div>,
                 <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 11} />,
                 <div className="h-full px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24">
@@ -509,13 +530,14 @@
             useEffect(() => {
                 if (!isReady || !interacted) return;
                 const i = slide;
+                // 分頁音樂管理邏輯
                 if (i === 0) playAudioZone('d1', 'go');
                 else if (i === 1) playAudioZone('sl', 'welcome');
                 else if (i === 2) playAudioZone('sp', 'boss');
                 else if (i >= 3 && i <= 7) playAudioZone('service_awards', 'misshk');
                 else if (i >= 8 && i <= 10) playAudioZone('game_time', 'ukulele');
                 else if (i === 11 || i === 13 || i === 15) playAudioZone('gallery_playlist', activePlaylist[playlistIndex]);
-                else if (i === 12) playAudioZone('g2', BGM_CONFIG.game2Seq); // Slide 13 Corrected
+                else if (i === 12) playAudioZone('g2', BGM_CONFIG.game2Seq); 
                 else if (i === 14) playAudioZone('g3', 'mark6');
                 else if (i === 16) playAudioZone('dr', 'draw');
                 else if (i === 17) playAudioZone('s1', 'sb1');
@@ -557,15 +579,15 @@
                         </div>
                     )}
                     <div className={`content-wrapper h-full w-full ${!interacted ? 'is-blurred' : 'is-revealed'}`}>
-                        <div className="fixed top-6 left-6 z-[100]"><button onClick={() => setIsMuted(!isMuted)} className="p-3 bg-white/10 border border-white/20 rounded-full shadow-2xl backdrop-blur-md">{isMuted ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2V15H6L11 19V5Z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg> : <div className="flex items-center gap-2"><div className="flex items-end h-3 gap-0.5">{[0.1, 0.4, 0.2, 0.5].map((d, i) => (<div key={i} className="w-0.5 bg-yellow-400 animate-bounce" style={{ height: '100%', animationDelay: `${d}s` }} />))}</div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2V15H6L11 19V5Z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></div>}</button></div>
+                        <div className="fixed top-6 left-6 z-[100]"><button onClick={() => setIsMuted(!isMuted)} className="p-3 bg-white/10 border border-white/20 rounded-full transition-all shadow-2xl backdrop-blur-md">{isMuted ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2V15H6L11 19V5Z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg> : <div className="flex items-center gap-2"><div className="flex items-end h-3 gap-0.5">{[0.1, 0.4, 0.2, 0.5].map((d, i) => (<div key={i} className="w-0.5 bg-yellow-400 animate-bounce" style={{ height: '100%', animationDelay: `${d}s` }} />))}</div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2V15H6L11 19V5Z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></div>}</button></div>
                         <div className="slide-num-label">{slide + 1} / {allSlides.length}</div>
                         
                         {(slide === 11 || slide === 13 || slide === 15) && interacted && (
                             <div className="liquid-glass-player">
                                 {activePlaylist.map((k, idx) => {
-                                    const isCurrent = currentFileRef.current && currentFileRef.current.includes(BGM_CONFIG[k]);
+                                    // 按鈕高亮邏輯：比對 playlistIndex
                                     return (
-                                        <button key={k} onClick={() => handleGallerySongChange(idx)} className={`song-btn ${isCurrent ? 'active' : ''}`}>{k === 'go' ? 'Go' : k === 'breathe' ? 'Air' : 'MC'}</button>
+                                        <button key={k} onClick={() => handleGallerySongChange(idx)} className={`song-btn ${playlistIndex === idx ? 'active' : ''}`}>{k === 'go' ? 'Go' : k === 'breathe' ? 'Air' : 'MC'}</button>
                                     );
                                 })}
                                 <div className="seekbar-container" onClick={seekAudio}>
