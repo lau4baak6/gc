@@ -113,7 +113,6 @@
         .is-blurred { filter: blur(70px); pointer-events: none; }
         .is-revealed { filter: blur(0px); pointer-events: auto; }
 
-        /* Liquid Glass Player UI */
         .liquid-glass-player {
             position: fixed; top: 50%; right: 30px; transform: translateY(-50%);
             background: rgba(255, 255, 255, 0.05);
@@ -359,6 +358,7 @@
                 const urlSource = BGM_CONFIG[songKeyOrUrl] || songKeyOrUrl;
                 const actualUrl = Array.isArray(urlSource) ? urlSource[0] : urlSource;
 
+                // 強力修復：若目標音樂路徑與當前一致且正在播放，則直接返回。
                 if (currentFileRef.current === actualUrl && audioRef.current && !audioRef.current.paused) return;
                 
                 if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
@@ -366,7 +366,7 @@
 
                 const audio = new Audio(actualUrl);
                 audio.muted = isMuted; audio.volume = 1;
-                const isSequence = Array.isArray(urlSource) || ['go', 'breathe', 'masterclass'].includes(songKeyOrUrl);
+                const isSequence = Array.isArray(urlSource) || activePlaylist.includes(songKeyOrUrl);
                 audio.loop = isSequence ? false : loop;
                 
                 if (songKeyOrUrl === 'breathe' || songKeyOrUrl === 'masterclass' || actualUrl.includes('breathe') || actualUrl.includes('masterclass')) {
@@ -378,10 +378,9 @@
                 };
 
                 audio.onended = () => {
-                    if (['go', 'breathe', 'masterclass'].includes(songKeyOrUrl)) {
-                        const nextIdx = (playlistIndex + 1) % activePlaylist.length;
-                        setPlaylistIndex(nextIdx);
-                        playAudio(activePlaylist[nextIdx]);
+                    if (activePlaylist.includes(songKeyOrUrl)) {
+                        // 使用函數式更新來防止閉包問題，並觸發 useEffect
+                        setPlaylistIndex(prev => (prev + 1) % activePlaylist.length);
                     } else if (Array.isArray(urlSource) && urlSource.length > 1) {
                         let curIdx = urlSource.indexOf(actualUrl);
                         let nextInSeq = (curIdx + 1) % urlSource.length;
@@ -422,8 +421,8 @@
                 /* 8: LSA Title Dup */ lsaTitle,
                 /* 9: Game Intro */ <div className="h-full text-center flex flex-col justify-center items-center"><h2 className="text-[15vw] md:text-[15rem] font-black italic text-emerald-glow tracking-tighter uppercase leading-none animate-pulse">GAME TIME!</h2></div>,
                 /* 10: Game 1 Title */ gameTitle(1, "圍獎"),
-                /* 11: Game 1 Rules (Swapped content) */ <div className="h-full text-center px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24"><div className="flex flex-col items-center gap-12 w-full"><p className="text-4xl md:text-7xl font-bold text-white opacity-90 uppercase">被抽中的枱號，每人皆可獲得</p><p className="text-xl md:text-4xl text-white/40 uppercase tracking-widest italic">Every guest wins when their table number is drawn!</p><span className="text-purple-glow font-black text-9xl md:text-[18rem] mt-12 shadow-2xl">豐富獎品</span><span className="text-purple-400/60 text-3xl md:text-7xl uppercase font-bold tracking-widest italic mt-4 uppercase">Fabulous Prizes</span></div></div>,
-                /* 12: Seriously (Swapped content) */ <div className="flex flex-col h-full items-center justify-center text-center gap-12 w-full max-w-8xl mx-auto px-6"><div className="text-left w-full"><span className="text-yellow-500 text-4xl md:text-7xl font-bold uppercase italic">唔係講笑...</span><p className="text-white/40 text-2xl md:text-4xl uppercase italic font-medium mt-4">Seriously...</p></div><div className="flex flex-col gap-8"><h2 className="text-7xl md:text-[12rem] font-black tracking-wider text-soft-gold-glow leading-tight">今晚獎金、獎品<br />非常豐富！！</h2><p className="text-white/40 text-3xl md:text-6xl uppercase font-medium">Massive prizes & cash await!!</p></div></div>,
+                /* 11: Game 1 Rules (Moved here) */ <div className="h-full text-center px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24"><div className="flex flex-col items-center gap-12 w-full"><p className="text-4xl md:text-7xl font-bold text-white opacity-90 uppercase">被抽中的枱號，每人皆可獲得</p><p className="text-xl md:text-4xl text-white/40 uppercase tracking-widest italic">Every guest wins when their table number is drawn!</p><span className="text-purple-glow font-black text-9xl md:text-[18rem] mt-12 shadow-2xl">豐富獎品</span><span className="text-purple-400/60 text-3xl md:text-7xl uppercase font-bold tracking-widest italic mt-4 uppercase">Fabulous Prizes</span></div></div>,
+                /* 12: Seriously (Moved here) */ <div className="flex flex-col h-full items-center justify-center text-center gap-12 w-full max-w-8xl mx-auto px-6"><div className="text-left w-full"><span className="text-yellow-500 text-4xl md:text-7xl font-bold uppercase italic">唔係講笑...</span><p className="text-white/40 text-2xl md:text-4xl uppercase italic font-medium mt-4">Seriously...</p></div><div className="flex flex-col gap-8"><h2 className="text-7xl md:text-[12rem] font-black tracking-wider text-soft-gold-glow leading-tight">今晚獎金、獎品<br />非常豐富！！</h2><p className="text-white/40 text-3xl md:text-6xl uppercase font-medium">Massive prizes & cash await!!</p></div></div>,
                 /* 13: Dome 2 */ <GallerySlide items={validPhotoIds} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 13} onImageError={handleImageError} />,
                 /* 14: Game 2 Title */ gameTitle(2, "競飲"),
                 /* 15: Game 2 Content */ <div className="h-full px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24"><div className="grid grid-cols-1 md:grid-cols-3 gap-16 mb-12 w-full h-[300px] md:h-[500px]">{[1,2,3].map((g, idx) => {const groupData = ["2, 5, 8, 11, 15, 18", "1, 6, 9, 12, 16, 19", "3, 7, 10, 13, 17"]; return (<div key={idx} className="flex flex-col h-full flex-1 relative"><div onClick={() => { const n = [...revealedGroups]; n[idx] = true; setRevealedGroups(n); }} className={`flex-grow bg-white/5 border border-white/10 p-12 rounded-[40px] cursor-pointer transition-all duration-1000 flex flex-col justify-center items-center shadow-2xl ${revealedGroups[idx] ? 'blur-0 bg-white/10' : 'blur-2xl'}`}><p className="text-yellow-500 text-2xl font-bold uppercase mb-4">Group {g}</p><p className="text-white text-4xl md:text-6xl font-black text-center">{groupData[idx]}</p></div><div className="mt-8 text-emerald-500 animate-bounce flex justify-center text-6xl">↓</div><div className="w-full bg-white/5 border border-white/20 py-8 rounded-3xl text-center mt-4 shadow-lg"><span className="text-3xl md:text-5xl font-black text-white uppercase opacity-90 block">晉級</span><span className="text-sm md:text-lg text-white/50 uppercase font-bold tracking-tighter">PROMOTED</span></div></div>); })}</div><div className="mt-24 flex flex-col items-center px-16 py-12 md:px-64 md:py-20 bg-gradient-to-r from-emerald-600/30 to-emerald-400/30 border-2 border-emerald-400/60 rounded-[60px] shadow-[0_0_120px_rgba(16,185,129,0.2)]"><span className="text-6xl md:text-[12rem] font-black text-purple-glow uppercase leading-none">冠・亞・季</span><span className="text-3xl md:text-6xl text-white/80 font-medium italic uppercase mt-10">Champion • 1st • 2nd Runner-up</span></div></div>,
@@ -459,16 +458,16 @@
             useEffect(() => {
                 if (!isReady || !interacted) return;
                 const i = slide;
-                // 分區連續播放邏輯 (Simple Path Match)
+                // --- 跨頁連續播放核心分配中心 ---
                 if (i === 0) playAudio('go');
                 else if (i === 1) playAudio('welcome');
                 else if (i === 2) playAudio('boss');
-                else if (i >= 3 && i <= 8) playAudio('misshk'); // 長期服務獎連續播放
-                else if (i >= 9 && i <= 12) playAudio('ukulele'); // 遊戲 1 (含標題頁) 連續播放
+                else if (i >= 3 && i <= 8) playAudio('misshk'); // 長期服務區連續播放 (3-8 頁)
+                else if (i >= 9 && i <= 12) playAudio('ukulele'); // 遊戲 1 持續區 (9-12 頁)
                 else if (i === 13) playAudio(activePlaylist[playlistIndex]); // 畫廊 2
-                else if (i >= 14 && i <= 15) playAudio(BGM_CONFIG.game2Seq); // 遊戲 2 (含標題頁) 連續播放
+                else if (i >= 14 && i <= 15) playAudio(BGM_CONFIG.game2Seq); // 遊戲 2 持續區 (14-15 頁)
                 else if (i === 16) playAudio(activePlaylist[playlistIndex]); // 畫廊 3
-                else if (i >= 17 && i <= 19) playAudio('mark6'); // 遊戲 3 (含標題頁與結果) 連續播放
+                else if (i >= 17 && i <= 19) playAudio('mark6'); // 遊戲 3 持續區 (17-19 頁)
                 else if (i === 20) playAudio(activePlaylist[playlistIndex]); // 畫廊 4
                 else if (i === 21) playAudio('draw'); 
                 else if (i === 22) playAudio('sb1'); 
