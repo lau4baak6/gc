@@ -205,7 +205,7 @@
             sb2: 'music/sb2.mp3'
         };
 
-        // 重新確認後的有效 ID (共 41 個)
+        // 核心 43 張照片 ID
         const MASTER_PHOTO_IDS = [
             "1RqBfC6J0uwVOF2M0q3AbhT8-FtYirG89", "1ZFvMc1gZSX3QTd8CW7kC7hQQW6GGOeA-", "1pSuryx5DNNw4anTZCTRAUP68XrcceVHC", 
             "1mmYJ9aftQ8VK-30za4vCsO_ZBhuhHIym", "1VlR-DVj04vvRNoQOaF2r6OtMEhf5cCQp", "1xilLXHVblUbiNWvkpbMzgbC6hoLLrlke", 
@@ -337,7 +337,7 @@
             const [focusedImage, setFocusedImage] = useState(null);
             const [isMuted, setIsMuted] = useState(false);
             
-            // 損壞連結自動過濾與重排系統
+            // 損壞連結偵測
             const [deadIds, setDeadIds] = useState(new Set());
             const validPhotoIds = useMemo(() => MASTER_PHOTO_IDS.filter(id => !deadIds.has(id)), [deadIds, MASTER_PHOTO_IDS]);
 
@@ -351,9 +351,7 @@
 
             const [revealedGroups, setRevealedGroups] = useState([false, false, false]);
 
-            const handleImageError = (id) => {
-                setDeadIds(prev => new Set(prev).add(id));
-            };
+            const handleImageError = (id) => setDeadIds(prev => new Set(prev).add(id));
 
             const seekAudio = (e) => {
                 if (!audioRef.current) return;
@@ -363,12 +361,11 @@
                 if (audioRef.current.duration) audioRef.current.currentTime = audioRef.current.duration * p;
             };
 
-            // 核心播放函數：支援跨頁分區鎖定 (Zone Locking)
             const playAudioZone = (zoneKey, songKeyOrUrl, loop = true) => {
                 let urlSource = BGM_CONFIG[songKeyOrUrl] || songKeyOrUrl;
                 let actualUrl = Array.isArray(urlSource) ? urlSource[0] : urlSource;
 
-                // 若 Zone 相同且檔案相同，保持播放不中斷
+                // Zone 鎖定邏輯：若區域相同且文件相同，則不重啟播放器，實現跨頁連播
                 if (activeZoneRef.current === zoneKey && currentFileRef.current === actualUrl && audioRef.current && !audioRef.current.paused) return;
                 
                 if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
@@ -378,7 +375,6 @@
                 audio.muted = isMuted; audio.volume = 1;
                 audio.loop = (zoneKey === 'gallery_playlist' || Array.isArray(urlSource)) ? false : loop;
                 
-                // Logic 2: breathe & masterclass 從 3秒起播
                 if (songKeyOrUrl === 'breathe' || songKeyOrUrl === 'masterclass' || actualUrl.includes('breathe') || actualUrl.includes('masterclass')) {
                     audio.currentTime = 3;
                 }
@@ -398,15 +394,14 @@
                     }
                 };
 
-                audio.play().catch(e => console.log("Audio Play Error:", e));
+                audio.play().catch(e => console.log("Blocked:", e));
                 audioRef.current = audio;
                 activeZoneRef.current = zoneKey;
                 currentFileRef.current = actualUrl;
             };
 
             const handleGallerySongChange = (idx) => { 
-                activeZoneRef.current = null; 
-                currentFileRef.current = null; 
+                activeZoneRef.current = null; currentFileRef.current = null; 
                 setPlaylistIndex(idx);
             };
 
@@ -414,7 +409,7 @@
                 setDir(n > slide ? 'next' : 'prev'); 
                 setSlide(n); 
                 setIsZoomed(false);
-                // 離開畫廊區域（11, 13, 15）時才重置 Zone 以停止音樂
+                // 如果離開畫廊專區，則強制清除 Zone 標記以便音樂停止或切換
                 if (![11, 13, 15].includes(n)) {
                     activeZoneRef.current = null;
                 }
@@ -518,14 +513,14 @@
             useEffect(() => {
                 if (!isReady || !interacted) return;
                 const i = slide;
-                // 分區音樂管理
-                if (i === 0) playAudioZone('d1', 'go');
+                // --- 跨頁播放邏輯控制中心 ---
+                if (i === 0) playAudioZone('gallery_playlist', activePlaylist[playlistIndex]); // Slide 1 加入 Playlist
                 else if (i === 1) playAudioZone('sl', 'welcome');
                 else if (i === 2) playAudioZone('sp', 'boss');
-                else if (i >= 3 && i <= 7) playAudioZone('service_awards', 'misshk'); // Slide 4-8 連播
-                else if (i >= 8 && i <= 10) playAudioZone('game_time', 'ukulele'); // Slide 9-11 連播
-                else if (i === 11 || i === 13 || i === 15) playAudioZone('gallery_playlist', activePlaylist[playlistIndex]);
-                else if (i === 12) playAudioZone('game2', BGM_CONFIG.game2Seq); 
+                else if (i >= 3 && i <= 7) playAudioZone('service_awards', 'misshk'); // 長期服務獎專區連播
+                else if (i >= 8 && i <= 10) playAudioZone('game_time_zone', 'ukulele'); // 遊戲預告專區連播
+                else if (i === 11 || i === 13 || i === 15) playAudioZone('gallery_playlist', activePlaylist[playlistIndex]); // 畫廊專區連播
+                else if (i === 12) playAudioZone('game2_music', BGM_CONFIG.game2Seq); // Slide 13 音樂修正
                 else if (i === 14) playAudioZone('g3', 'mark6');
                 else if (i === 16) playAudioZone('dr', 'draw');
                 else if (i === 17) playAudioZone('s1', 'sb1');
@@ -570,7 +565,8 @@
                         <div className="fixed top-6 left-6 z-[100]"><button onClick={() => setIsMuted(!isMuted)} className="p-3 bg-white/10 border border-white/20 rounded-full shadow-2xl backdrop-blur-md">{isMuted ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2V15H6L11 19V5Z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg> : <div className="flex items-center gap-2"><div className="flex items-end h-3 gap-0.5">{[0.1, 0.4, 0.2, 0.5].map((d, i) => (<div key={i} className="w-0.5 bg-yellow-400 animate-bounce" style={{ height: '100%', animationDelay: `${d}s` }} />))}</div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2V15H6L11 19V5Z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></div>}</button></div>
                         <div className="slide-num-label">{slide + 1} / {allSlides.length}</div>
                         
-                        {(slide === 0 || slide === 11 || slide === 13 || slide === 15) && interacted && (
+                        {/* 修正：移除了 slide === 0 的判斷，Slide 1 不顯示 Music UI */}
+                        {(slide === 11 || slide === 13 || slide === 15) && interacted && (
                             <div className="liquid-glass-player">
                                 {activePlaylist.map((k, idx) => (
                                     <button key={k} onClick={() => handleGallerySongChange(idx)} className={`song-btn ${playlistIndex === idx ? 'active' : ''}`}>{k === 'go' ? 'Go' : k === 'breathe' ? 'Air' : 'MC'}</button>
