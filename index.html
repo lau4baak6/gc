@@ -79,6 +79,13 @@
             filter: drop-shadow(0 0 50px rgba(168, 85, 247, 0.9));
         }
 
+        .text-emerald-glow {
+            background: linear-gradient(to bottom, #ffffff, #6ee7b7, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 60px rgba(16, 185, 129, 0.8));
+        }
+
         .slide-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
         .slide-item {
             position: absolute; inset: 0;
@@ -86,8 +93,8 @@
             width: 100%; height: 100%;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        .slide-enter-next { transform: translateX(100%); opacity: 0; }
         .slide-active { transform: translateX(0); opacity: 1; z-index: 20; }
+        .slide-enter-next { transform: translateX(100%); opacity: 0; }
         .slide-exit-next { transform: translateX(-100%); opacity: 0; }
         .slide-enter-prev { transform: translateX(-100%); opacity: 0; }
         .slide-exit-prev { transform: translateX(100%); opacity: 0; }
@@ -106,7 +113,7 @@
         .is-blurred { filter: blur(70px); pointer-events: none; }
         .is-revealed { filter: blur(0px); pointer-events: auto; }
 
-        /* Liquid Glass Controller */
+        /* Liquid Glass Player UI */
         .liquid-glass-player {
             position: fixed; top: 50%; right: 30px; transform: translateY(-50%);
             background: rgba(255, 255, 255, 0.05);
@@ -143,25 +150,15 @@
             background: #10b981; transition: height 0.1s linear;
         }
 
-        /* 加碼特效 */
         .bonus-box {
-            padding: 50px 100px;
-            background: rgba(0,0,0,0.85);
-            border: 6px solid #f97316;
-            border-radius: 50px;
+            padding: 50px 100px; background: rgba(0,0,0,0.85);
+            border: 6px solid #f97316; border-radius: 50px;
             box-shadow: 0 0 40px #f97316, inset 0 0 30px #ea580c;
             animation: bonus-impact 1.2s infinite alternate ease-in-out, bonus-shake 0.3s infinite;
             position: relative; z-index: 100;
         }
-        @keyframes bonus-impact {
-            from { transform: scale(0.9) rotate(-1deg); }
-            to { transform: scale(1.1) rotate(1deg); box-shadow: 0 0 150px #f97316, 0 0 50px #fbbf24; }
-        }
-        @keyframes bonus-shake {
-            0% { transform: translate(1px, 1px); }
-            50% { transform: translate(-1px, -2px); }
-            100% { transform: translate(2px, 0px); }
-        }
+        @keyframes bonus-impact { from { transform: scale(0.9) rotate(-1deg); } to { transform: scale(1.1) rotate(1deg); box-shadow: 0 0 150px #f97316, 0 0 50px #fbbf24; } }
+        @keyframes bonus-shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -2px); } 100% { transform: translate(2px, 0px); } }
 
         .bouncing-text-fx {
             position: absolute; font-weight: 900; white-space: nowrap; user-select: none;
@@ -182,7 +179,7 @@
             <img src="Logo.png" alt="Logo" class="w-32 h-32 object-contain" />
             <div class="flex flex-col items-center">
                 <div class="loader-bar-bg"><div id="loader-fill" class="loader-bar-fill"></div></div>
-                <div id="loader-text" class="text-[10px] text-emerald-500/60 mt-4 tracking-widest uppercase font-bold animate-pulse">Syncing Ceremonial Assets...</div>
+                <div id="loader-text" class="text-[10px] text-emerald-500/60 mt-4 tracking-widest uppercase font-bold animate-pulse">Syncing Ceremony Assets...</div>
             </div>
         </div>
     </div>
@@ -192,6 +189,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
+        // --- 1. 配置與音效路徑 ---
         const BGM_CONFIG = {
             go: 'music/go.mp3',
             welcome: 'music/welcoming.mp3',
@@ -232,11 +230,11 @@
             "18YzR9G1Lw4WUUsHSEF-xGKmM18fxNREw"
         ];
 
-        // --- 子組件 ---
+        // --- 2. 子組件 ---
 
         function BouncingTextFX({ text, count = 30 }) {
             const particlesRef = useRef([]);
-            // 初始化粒子數據，防止 undefined 錯誤
+            // 初始化 Ref 陣列
             if (particlesRef.current.length === 0) {
                 particlesRef.current = Array.from({ length: count }).map(() => ({
                     el: null, x: 0, y: 0, vx: 0, vy: 0, rot: 0, vr: 0
@@ -246,12 +244,9 @@
             useEffect(() => {
                 const w = window.innerWidth, h = window.innerHeight;
                 particlesRef.current.forEach(p => {
-                    p.x = Math.random() * (w - 200);
-                    p.y = Math.random() * (h - 100);
-                    p.vx = (Math.random() - 0.5) * 16;
-                    p.vy = (Math.random() - 0.5) * 16;
-                    p.rot = Math.random() * 360;
-                    p.vr = (Math.random() - 0.5) * 6;
+                    p.x = Math.random() * (w - 200); p.y = Math.random() * (h - 100);
+                    p.vx = (Math.random() - 0.5) * 16; p.vy = (Math.random() - 0.5) * 16;
+                    p.rot = Math.random() * 360; p.vr = (Math.random() - 0.5) * 6;
                 });
 
                 function animate() {
@@ -299,7 +294,8 @@
                     timer = setTimeout(() => setIsZoomed(false), 6000);
                 } else {
                     timer = setTimeout(() => {
-                        setFocusedImage({ id: items[Math.floor(Math.random() * items.length)] });
+                        const randomId = items[Math.floor(Math.random() * items.length)];
+                        setFocusedImage({ id: randomId });
                         setIsZoomed(true);
                     }, 5000);
                 }
@@ -341,7 +337,7 @@
             );
         }
 
-        // --- 4. 主應用程序 ---
+        // --- 3. 主應用程序 ---
 
         function App() {
             const [slide, setSlide] = useState(0);
@@ -352,34 +348,57 @@
             const [focusedImage, setFocusedImage] = useState(null);
             const [isMuted, setIsMuted] = useState(false);
             
+            // 音樂播放器狀態
             const [playlistIndex, setPlaylistIndex] = useState(0);
             const [progress, setProgress] = useState(0);
             const audioRef = useRef(null);
+            const activeZoneRef = useRef(null);
+            const currentFileRef = useRef(null);
+
             const activePlaylist = useMemo(() => ['go', 'breathe', 'masterclass'], []);
             const domeItems = useMemo(() => PHOTO_IDS, []);
-
-            // Game 2 揭曉狀態
             const [revealedGroups, setRevealedGroups] = useState([false, false, false]);
 
-            const playPlaylistSong = (index) => {
+            // 核心播放函數：支援分區連播與起始時間規則
+            const playAudioZone = (zoneKey, songKeyOrUrl, loop = true) => {
+                const url = BGM_CONFIG[songKeyOrUrl] || songKeyOrUrl;
+                // 防止同分區同音軌重複啟動
+                if (activeZoneRef.current === zoneKey && currentFileRef.current === url) return;
+                
                 if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
                 if (!interacted) return;
-                
-                const songKey = activePlaylist[index];
-                const audio = new Audio(BGM_CONFIG[songKey]);
-                audio.muted = isMuted; audio.volume = 1;
-                
-                // Logic 2: breathe & masterclass start at 3s
-                if (songKey === 'breathe' || songKey === 'masterclass') audio.currentTime = 3;
 
-                audio.ontimeupdate = () => setProgress((audio.currentTime / audio.duration) * 100);
-                audio.onended = () => {
-                    const next = (index + 1) % activePlaylist.length;
-                    setPlaylistIndex(next);
-                    playPlaylistSong(next);
+                const audio = new Audio(url);
+                audio.muted = isMuted; audio.volume = 1; audio.loop = loop;
+                
+                // Logic 2: breathe & masterclass 從 3秒起播
+                if (songKeyOrUrl === 'breathe' || songKeyOrUrl === 'masterclass' || url.includes('breathe') || url.includes('masterclass')) {
+                    audio.currentTime = 3;
+                }
+
+                audio.ontimeupdate = () => {
+                    if (zoneKey === 'gallery_playlist') {
+                        setProgress((audio.currentTime / audio.duration) * 100);
+                    }
                 };
+
+                audio.onended = () => {
+                    if (zoneKey === 'gallery_playlist') {
+                        const next = (playlistIndex + 1) % activePlaylist.length;
+                        handleGallerySongChange(next);
+                    }
+                };
+
                 audio.play().catch(()=>{});
                 audioRef.current = audio;
+                activeZoneRef.current = zoneKey;
+                currentFileRef.current = url;
+            };
+
+            const handleGallerySongChange = (idx) => { 
+                activeZoneRef.current = null; 
+                currentFileRef.current = null; 
+                setPlaylistIndex(idx);
             };
 
             const seekAudio = (e) => {
@@ -390,22 +409,12 @@
                 audioRef.current.currentTime = audioRef.current.duration * p;
             };
 
-            const playSingleAudio = (fileOrFiles, loop = true) => {
-                if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-                if (!interacted) return;
-                const file = Array.isArray(fileOrFiles) ? fileOrFiles[0] : fileOrFiles;
-                const audio = new Audio(file);
-                audio.muted = isMuted; audio.volume = 1; audio.loop = loop;
-                audio.play().catch(()=>{});
-                audioRef.current = audio;
-            };
-
             const changeSlide = (n) => { setDir(n > slide ? 'next' : 'prev'); setSlide(n); setIsZoomed(false); };
 
             const allSlides = [
                 <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 0} />,
                 <div className="flex flex-col items-center justify-center h-full w-full px-4 text-center">
-                    <div className="flex flex-col items-center justify-center gap-12 md:gap-16">
+                    <div className="flex-grow flex flex-col items-center justify-center gap-12">
                         <img src="Logo.png" alt="Logo" className="w-full max-w-4xl h-auto drop-shadow-2xl" />
                         <div className="flex flex-col gap-2">
                             <h1 className="text-4xl md:text-7xl font-light text-white-gold tracking-widest uppercase">Annual Dinner</h1>
@@ -419,7 +428,7 @@
                 </div>,
                 <div className="flex flex-col h-full items-center justify-center gap-12 px-6">
                     <div className="text-center"><h1 className="text-6xl md:text-9xl font-bold text-white-gold tracking-[0.5em] uppercase">致詞</h1><span className="text-emerald-400 text-2xl md:text-4xl font-light mt-2 block uppercase">Speech</span></div>
-                    <div className="flex flex-col items-center gap-10 md:gap-16 text-[8vw] md:text-8xl font-medium text-white drop-shadow-2xl text-center">
+                    <div className="flex flex-col items-center gap-10 text-[8vw] md:text-8xl font-medium text-white drop-shadow-2xl text-center">
                         <span className="whitespace-nowrap">Morris & Mikey</span><div className="h-[2px] w-48 md:w-96 bg-white/20" /><span>Teddy & Kanji</span>
                     </div>
                 </div>,
@@ -428,7 +437,7 @@
                 <div className="h-full text-center px-6 flex flex-col justify-center items-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black mb-12">15 Years</span><span className="text-5xl md:text-9xl font-medium text-white">Kanji Kwok</span></div>,
                 <div className="h-full text-center px-6 flex flex-col justify-center items-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black mb-12">20 Years</span><div className="flex flex-col gap-6"><span className="text-5xl md:text-9xl font-medium text-white">Kason Lau</span><span className="text-5xl md:text-9xl font-medium text-white">Steven Ngai</span></div></div>,
                 <div className="h-full text-center px-6 flex flex-col justify-center items-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black mb-12">25 Years</span><span className="text-5xl md:text-9xl font-medium text-white">Wilson Chang</span></div>,
-                <div className="h-full text-center flex flex-col justify-center items-center"><h2 className="text-[15vw] md:text-[15rem] font-black italic text-emerald-glow tracking-tighter uppercase leading-none">GAME TIME!</h2></div>,
+                <div className="h-full text-center flex flex-col justify-center items-center"><h2 className="text-[15vw] md:text-[15rem] font-black italic text-emerald-glow tracking-tighter uppercase leading-none animate-pulse">GAME TIME!</h2></div>,
                 <div className="flex flex-col h-full items-center justify-center text-center gap-12 w-full max-w-8xl mx-auto px-6">
                     <div className="text-left w-full"><span className="text-yellow-500 text-4xl md:text-7xl font-bold uppercase italic">唔係講笑...</span><p className="text-white/40 text-2xl md:text-4xl uppercase italic font-medium mt-4">Seriously...</p></div>
                     <div className="flex flex-col gap-8">
@@ -438,7 +447,7 @@
                 </div>,
                 <div className="h-full text-center px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24">
                     <div className="w-full mb-16 border-b border-white/10 pb-8 flex justify-between items-end text-left"><span className="text-emerald-400 text-3xl md:text-7xl font-bold uppercase">Game 1</span><span className="text-white text-3xl md:text-7xl font-black text-right uppercase">被抽中的枱號</span></div>
-                    <div className="flex flex-col items-center gap-10 w-full"><p className="text-4xl md:text-7xl font-bold text-white opacity-90 uppercase">被抽中的枱號，每人皆可獲得</p><p className="text-xl md:text-4xl text-white/40 uppercase tracking-widest italic">Every guest wins when their table number is drawn!</p><span className="text-purple-glow font-black text-9xl md:text-[18rem] mt-12 shadow-2xl">豐富獎品</span><span className="text-purple-400/60 text-3xl md:text-7xl uppercase font-bold tracking-widest italic mt-4 uppercase">Fabulous Prizes</span></div>
+                    <div className="flex flex-col items-center gap-12 w-full"><p className="text-4xl md:text-7xl font-bold text-white opacity-90 uppercase">被抽中的枱號，每人皆可獲得</p><p className="text-xl md:text-4xl text-white/40 uppercase tracking-widest italic">Every guest wins when their table number is drawn!</p><span className="text-purple-glow font-black text-9xl md:text-[18rem] mt-12 shadow-2xl">豐富獎品</span><span className="text-purple-400/60 text-3xl md:text-7xl uppercase font-bold tracking-widest italic mt-4 uppercase">Fabulous Prizes</span></div>
                 </div>,
                 <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 11} />,
                 <div className="h-full px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24">
@@ -450,8 +459,8 @@
                                 <div key={idx} className="flex flex-col h-full flex-1 relative">
                                     <div onClick={() => { const n = [...revealedGroups]; n[idx] = true; setRevealedGroups(n); }} 
                                          className={`flex-grow bg-white/5 border border-white/10 p-12 rounded-[40px] cursor-pointer transition-all duration-1000 flex flex-col justify-center items-center shadow-2xl ${revealedGroups[idx] ? 'blur-0 bg-white/10' : 'blur-2xl'}`}>
-                                        <p className="text-yellow-500 text-xl font-bold uppercase mb-4">Group {g}</p>
-                                        <p className="text-white text-3xl md:text-5xl font-black">{groupData[idx]}</p>
+                                        <p className="text-yellow-500 text-2xl font-bold uppercase mb-4">Group {g}</p>
+                                        <p className="text-white text-4xl md:text-6xl font-black">{groupData[idx]}</p>
                                     </div>
                                     <div className="mt-8 text-emerald-500 animate-bounce flex justify-center text-6xl">↓</div>
                                     <div className="w-full bg-white/5 border border-white/20 py-8 rounded-3xl text-center mt-4 shadow-lg"><span className="text-3xl md:text-5xl font-black text-white uppercase opacity-90 block">晉級</span><span className="text-sm md:text-lg text-white/50 uppercase font-bold tracking-tighter">PROMOTED</span></div>
@@ -490,8 +499,8 @@
                 <div className="flex flex-col items-center justify-center h-full text-center gap-12 px-6">
                     <h2 className="text-5xl md:text-9xl lg:text-[11rem] font-bold text-white tracking-widest italic drop-shadow-2xl leading-none">感謝各位蒞臨</h2>
                     <div className="flex flex-col gap-4">
-                        <p className="text-2xl md:text-5xl lg:text-[6.5rem] font-bold text-white/90 whitespace-nowrap tracking-wider uppercase">2026 冠恒集團春茗</p>
-                        <p className="text-2xl md:text-5xl lg:text-[6.5rem] font-bold text-white/90 whitespace-nowrap tracking-wider leading-snug uppercase">圓滿結束</p>
+                        <p className="text-2xl md:text-[5.5rem] lg:text-[6.5rem] font-bold text-white/90 whitespace-nowrap tracking-wider uppercase">2026 冠恒集團春茗</p>
+                        <p className="text-2xl md:text-[5.5rem] lg:text-[6.5rem] font-bold text-white/90 whitespace-nowrap tracking-wider leading-snug uppercase">圓滿結束</p>
                     </div>
                     <h3 className="text-6xl md:text-9xl lg:text-[13rem] font-black text-yellow-400 italic animate-pulse mt-6 uppercase leading-none">下年再見!</h3>
                 </div>
@@ -500,30 +509,33 @@
             useEffect(() => {
                 if (!isReady || !interacted) return;
                 const i = slide;
-                if (i === 0) playSingleAudio(BGM_CONFIG.go);
-                else if (i === 1) playSingleAudio(BGM_CONFIG.welcome);
-                else if (i === 2) playSingleAudio(BGM_CONFIG.boss);
-                else if (i >= 3 && i <= 7) playSingleAudio(BGM_CONFIG.misshk);
-                else if (i >= 8 && i <= 10) playSingleAudio(BGM_CONFIG.ukulele);
-                else if (i === 11 || i === 13 || i === 15) playPlaylistSong(playlistIndex);
-                else if (i === 12) playSingleAudio(BGM_CONFIG.game2Seq);
-                else if (i === 14) playSingleAudio(BGM_CONFIG.mark6);
-                else if (i === 16) playSingleAudio(BGM_CONFIG.draw);
-                else if (i === 17) playSingleAudio(BGM_CONFIG.sb1);
-                else if (i === 18) playSingleAudio(BGM_CONFIG.sb2);
-                else if (i === 19) playSingleAudio(BGM_CONFIG.breathe);
-                else { if (audioRef.current) audioRef.current.pause(); audioRef.current = null; }
-            }, [slide, interacted, isReady]);
+                // 分頁音樂與連播區域管理
+                if (i === 0) playAudioZone('d1', 'go');
+                else if (i === 1) playAudioZone('sl', 'welcome');
+                else if (i === 2) playAudioZone('sp', 'boss');
+                else if (i >= 3 && i <= 7) playAudioZone('service_awards', 'misshk');
+                else if (i >= 8 && i <= 10) playAudioZone('game_time', 'ukulele');
+                else if (i === 11 || i === 13 || i === 15) playAudioZone('gallery_playlist', activePlaylist[playlistIndex]);
+                else if (i === 12) playAudioZone('g2', BGM_CONFIG.game2Seq);
+                else if (i === 14) playAudioZone('g3', 'mark6');
+                else if (i === 16) playAudioZone('dr', 'draw');
+                else if (i === 17) playAudioZone('s1', 'sb1');
+                else if (i === 18) playAudioZone('s2', 'sb2');
+                else if (i === 19) playAudioZone('final', 'breathe');
+                else { 
+                    if (audioRef.current) audioRef.current.pause(); 
+                    activeZoneRef.current = null; currentFileRef.current = null; 
+                }
+            }, [slide, interacted, playlistIndex, isReady]);
 
             useEffect(() => {
                 let imgL = 0, audL = 0;
                 const imgU = PHOTO_IDS.map(id => `https://drive.google.com/thumbnail?id=${id}&sz=w1000`);
                 const audU = Object.values(BGM_CONFIG).flat();
-                const total = imgU.length + audU.length;
                 const check = () => {
                     const fill = document.getElementById('loader-fill');
-                    if (fill) fill.style.width = ((imgL + audL) / total) * 100 + '%';
-                    if (imgL + audL >= total) {
+                    if (fill) fill.style.width = ((imgL + audL) / (imgU.length + audU.length)) * 100 + '%';
+                    if (imgL + audL >= imgU.length + audU.length) {
                         const pre = document.getElementById('preloader'); if (pre) pre.style.opacity = '0';
                         setTimeout(() => { if (pre) pre.style.display = 'none'; setIsReady(true); }, 1000);
                     }
@@ -551,7 +563,7 @@
                         {(slide === 11 || slide === 13 || slide === 15) && interacted && (
                             <div className="liquid-glass-player">
                                 {activePlaylist.map((k, idx) => (
-                                    <button key={k} onClick={() => playPlaylistSong(idx)} className={`song-btn ${playlistIndex === idx ? 'active' : ''}`}>{k === 'go' ? 'Go' : k === 'breathe' ? 'Air' : 'MC'}</button>
+                                    <button key={k} onClick={() => handleGallerySongChange(idx)} className={`song-btn ${playlistIndex === idx ? 'active' : ''}`}>{k === 'go' ? 'Go' : k === 'breathe' ? 'Air' : 'MC'}</button>
                                 ))}
                                 <div className="seekbar-container" onClick={seekAudio}>
                                     <div className="seekbar-fill" style={{ height: `${progress}%` }} />
