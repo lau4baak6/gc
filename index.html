@@ -138,12 +138,7 @@
             text-transform: uppercase;
         }
         .song-btn:hover { background: rgba(255, 255, 255, 0.1); transform: scale(1.05); }
-        .song-btn.active {
-            background: rgba(16, 185, 129, 0.2);
-            border-color: #10b981;
-            color: #10b981;
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
-        }
+        .song-btn.active { background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
 
         .seekbar-container {
             width: 6px; height: 180px;
@@ -210,9 +205,22 @@
             sb2: 'music/sb2.mp3'
         };
 
-        // 已過濾掉 2 個損壞連結的 41 個有效 ID
-        const PHOTO_IDS = [
-            "1RqBfC6J0uwVOF2M0q3AbhT8-FtYirG89", "1ZFvMc1gZSX3QTd8CW7kC7hQQW6GGOeA-", "1pSuryx5DNNw4anTZCTRAUP68XrcceVHC", "1mmYJ9aftQ8VK-30za4vCsO_ZBhuhHIym", "1VlR-DVj04vvRNoQOaF2r6OtMEhf5cCQp", "1xilLXHVblUbiNWvkpbMzgbC6hoLLrlke", "13etlXHLNMstt2Vqqvn33xTUQCQENtByr", "1wzSwlRoEu8ohUoUh-1u3kik3GIGOSdCB", "1NWNlzG11Umi1XOuQlbMJKYUMTQrG6xwt", "188yK-EzbN7dNOp0N9wq4MUVO2Z50nO5e", "1-xWAZFmmg6G3DfOEcb28Jnpg4YZtO4YV", "1hLimZFEENvw5jmVKntGN9YGQhK0LOpaE", "1aA9MwZciWVMNdLPLcOpEMb9oP54gf_Eh", "1-lMWx4X22yVe3r8w5CD__gONCHudXkVN", "15fnJvJGdjtfYSCmoCVxNSPmZKTe6tDO3", "1-uO8oKE7Hg5PtXg7VXvy9CgxLXzas_qu", "1kjkszXybmxY2SuJNBqG-1zveuScNiBkM", "1uuhm3ZJdZKU0NYHD7s2fl5mghlaqBSnE", "1qQYWGNJA1wVX9jzqyXNRTvQEaQgbxCCT", "1EFpsb6S0egGq1b1oNpoNyy_GkTUmy3gL", "113hXIubqsHpfOvxesrRPtnkNHsdRZE8V", "1lFt3Ymw6-arcIPePzkOIivUSR3g-gOhA", "1FjIUsay8TsK-00hceVNizS2rJRXGvgvP", "1AAZmAnGXSHzcxSWyZ3UcyxLfCEb84nxw", "11DVFaG1cBWSPnRw0maeJ8sYG54YNZ_uW", "1PwMf2AYgCWHVugUHXdy7For1rwbtr-A8G", "1ORXnJejLTqNEI_5YQYXy5AdNLQwDCbMd", "1YWnjIvwYJgeHBvBR8UWPLrhvVCI14OAT", "1UOnhgGdwF3VZsLO1iUFyYkWFqaJKjUPW", "1RXBF3hCI9NGJF7gS1bkh0QdG8KSsEyGV", "1xBufpe0ojSPqDNSC0ToDzwXLw2hHRsx4", "133N2ALosZBRh7md_VoMYEQe_62CO28-E", "1gEnekpbuGVOKlOLSCFiFSF0xpPTp2a4e", "1kKazZd3rfJzoefw-USdyhqTNBFPpQ4uB", "1KEaRhFsPgBQQwx6bgpKafEnlYZQNu_Oi", "1cj4UgaLi6S17yFn2zeN783z3_VIQHPXU", "17kdoE95toW4pnnps8cd1--nCr3_KOOl7", "1uG42rZ40GqS5nevtevQ4DrV66yzwL0M8", "1Qv5qHXFWxpiP-rf_075fEIoP92aB95cW", "15R6-eCEq8dnoyd9gcF6IkmPQh33KXfos", "1yri2xKHS_Dhg3Nfr_g67FWMNfMoWaD3B"
+        // 重新確認後的有效 ID (共 41 個)
+        const MASTER_PHOTO_IDS = [
+            "1RqBfC6J0uwVOF2M0q3AbhT8-FtYirG89", "1ZFvMc1gZSX3QTd8CW7kC7hQQW6GGOeA-", "1pSuryx5DNNw4anTZCTRAUP68XrcceVHC", 
+            "1mmYJ9aftQ8VK-30za4vCsO_ZBhuhHIym", "1VlR-DVj04vvRNoQOaF2r6OtMEhf5cCQp", "1xilLXHVblUbiNWvkpbMzgbC6hoLLrlke", 
+            "13etlXHLNMstt2Vqqvn33xTUQCQENtByr", "1wzSwlRoEu8ohUoUh-1u3kik3GIGOSdCB", "1NWNlzG11Umi1XOuQlbMJKYUMTQrG6xwt", 
+            "188yK-EzbN7dNOp0N9wq4MUVO2Z50nO5e", "1-xWAZFmmg6G3DfOEcb28Jnpg4YZtO4YV", "1hLimZFEENvw5jmVKntGN9YGQhK0LOpaE", 
+            "1aA9MwZciWVMNdLPLcOpEMb9oP54gf_Eh", "1-lMWx4X22yVe3r8w5CD__gONCHudXkVN", "15fnJvJGdjtfYSCmoCVxNSPmZKTe6tDO3", 
+            "1-uO8oKE7Hg5PtXg7VXvy9CgxLXzas_qu", "1kjkszXybmxY2SuJNBqG-1zveuScNiBkM", "1uuhm3ZJdZKU0NYHD7s2fl5mghlaqBSnE", 
+            "1qQYWGNJA1wVX9jzqyXNRTvQEaQgbxCCT", "1EFpsb6S0egGq1b1oNpoNyy_GkTUmy3gL", "113hXIubqsHpfOvxesrRPtnkNHsdRZE8V", 
+            "1lFt3Ymw6-arcIPePzkOIivUSR3g-gOhA", "1FjIUsay8TsK-00hceVNizS2rJRXGvgvP", "1AAZmAnGXSHzcxSWyZ3UcyxLfCEb84nxw", 
+            "11DVFaG1cBWSPnRw0maeJ8sYG54YNZ_uW", "1PwMf2AYgCWHVugUHXdy7For1rwbtr-A8G", "1ORXnJejLTqNEI_5YQYXy5AdNLQwDCbMd", 
+            "1YWnjIvwYJgeHBvBR8UWPLrhvVCI14OAT", "1UOnhgGdwF3VZsLO1iUFyYkWFqaJKjUPW", "1RXBF3hCI9NGJF7gS1bkh0QdG8KSsEyGV", 
+            "1xBufpe0ojSPqDNSC0ToDzwXLw2hHRsx4", "133N2ALosZBRh7md_VoMYEQe_62CO28-E", "1gEnekpbuGVOKlOLSCFiFSF0xpPTp2a4e", 
+            "1kKazZd3rfJzoefw-USdyhqTNBFPpQ4uB", "1KEaRhFsPgBQQwx6bgpKafEnlYZQNu_Oi", "1cj4UgaLi6S17yFn2zeN783z3_VIQHPXU", 
+            "17kdoE95toW4pnnps8cd1--nCr3_KOOl7", "1uG42rZ40GqS5nevtevQ4DrV66yzwL0M8", "1Qv5qHXFWxpiP-rf_075fEIoP92aB95cW", 
+            "15R6-eCEq8dnoyd9gcF6IkmPQh33KXfos", "1yri2xKHS_Dhg3Nfr_g67FWMNfMoWaD3B"
         ];
 
         // --- 子組件 ---
@@ -253,7 +261,7 @@
             );
         }
 
-        function GallerySlide({ items, isZoomed, setIsZoomed, setFocusedImage, isActive }) {
+        function GallerySlide({ items, isZoomed, setIsZoomed, setFocusedImage, isActive, onImageError }) {
             const stageRef = useRef(null);
             const rotationRef = useRef(0);
             const [radius, setRadius] = useState(1100);
@@ -266,7 +274,7 @@
                 if (!isActive) return;
                 let timer;
                 if (isZoomed) timer = setTimeout(() => setIsZoomed(false), 6000);
-                else timer = setTimeout(() => {
+                else if (items.length > 0) timer = setTimeout(() => {
                     setFocusedImage({ id: items[Math.floor(Math.random()*items.length)] });
                     setIsZoomed(true);
                 }, 5000);
@@ -284,30 +292,31 @@
                 raf = requestAnimationFrame(animateDome);
                 return () => cancelAnimationFrame(raf);
             }, [isZoomed, radius]);
+
+            if (items.length === 0) return null;
+
             return (
                 <div className="absolute inset-0 flex items-center justify-center [perspective:1200px] z-10 transition-all duration-1000"
                     style={{ transform: isZoomed ? 'scale(0.8) translateZ(-200px)' : 'scale(1)', opacity: isZoomed ? 0.2 : 1 }}>
                     <div ref={stageRef} className="relative w-0 h-0 [transform-style:preserve-3d]">
                         {items.map((id, i) => {
-                            // 動態均勻分佈 41 張照片 (分層比例 8-8-9-8-8)
-                            const rowSizes = [8, 8, 9, 8, 8];
-                            let currentRow = 0, currentIdxInRow = 0, countBefore = 0;
-                            for(let r=0; r<5; r++){
-                                if(i < countBefore + rowSizes[r]){
-                                    currentRow = r;
-                                    currentIdxInRow = i - countBefore;
-                                    break;
-                                }
-                                countBefore += rowSizes[r];
-                            }
-                            const yaw = currentIdxInRow * (360 / rowSizes[currentRow]);
-                            const pitch = (currentRow - 2) * 15;
+                            const rows = 5;
+                            const itemsPerRow = Math.ceil(items.length / rows);
+                            const row = Math.floor(i / itemsPerRow);
+                            const col = i % itemsPerRow;
+                            const yaw = col * (360 / itemsPerRow);
+                            const pitch = (row - 2) * 15;
                             return (
-                                <div key={i} className="absolute w-[210px] h-[135px] md:w-[320px] md:h-[200px] -left-[105px] md:-left-[160px] -top-[67px] md:-top-[100px] [transform-style:preserve-3d]"
+                                <div key={id} className="absolute w-[210px] h-[135px] md:w-[320px] md:h-[200px] -left-[105px] md:-left-[160px] -top-[67px] md:-top-[100px] [transform-style:preserve-3d]"
                                     style={{ transform: `rotateY(${yaw}deg) rotateX(${-pitch}deg) translateZ(${radius}px)` }}>
                                     <div className="photo-grid-item w-full h-full bg-white/5 rounded-2xl border border-white/20 overflow-hidden shadow-2xl cursor-pointer"
                                          onClick={(e) => { e.stopPropagation(); setFocusedImage({id}); setIsZoomed(true); }}>
-                                        <img src={`https://drive.google.com/thumbnail?id=${id}&sz=w1000`} className="w-full h-full object-cover opacity-70" loading="lazy" />
+                                        <img 
+                                            src={`https://drive.google.com/thumbnail?id=${id}&sz=w1000`} 
+                                            className="w-full h-full object-cover opacity-70" 
+                                            loading="lazy"
+                                            onError={() => onImageError(id)}
+                                        />
                                     </div>
                                 </div>
                             );
@@ -328,15 +337,23 @@
             const [focusedImage, setFocusedImage] = useState(null);
             const [isMuted, setIsMuted] = useState(false);
             
+            // 損壞連結自動過濾與重排系統
+            const [deadIds, setDeadIds] = useState(new Set());
+            const validPhotoIds = useMemo(() => MASTER_PHOTO_IDS.filter(id => !deadIds.has(id)), [deadIds, MASTER_PHOTO_IDS]);
+
+            // 音樂控制
             const [playlistIndex, setPlaylistIndex] = useState(0);
             const [progress, setProgress] = useState(0);
             const audioRef = useRef(null);
             const activeZoneRef = useRef(null);
             const currentFileRef = useRef(null);
-
             const activePlaylist = useMemo(() => ['go', 'breathe', 'masterclass'], []);
-            const domeItems = useMemo(() => PHOTO_IDS, []);
+
             const [revealedGroups, setRevealedGroups] = useState([false, false, false]);
+
+            const handleImageError = (id) => {
+                setDeadIds(prev => new Set(prev).add(id));
+            };
 
             const seekAudio = (e) => {
                 if (!audioRef.current) return;
@@ -346,10 +363,12 @@
                 if (audioRef.current.duration) audioRef.current.currentTime = audioRef.current.duration * p;
             };
 
+            // 核心播放函數：支援跨頁分區鎖定 (Zone Locking)
             const playAudioZone = (zoneKey, songKeyOrUrl, loop = true) => {
                 let urlSource = BGM_CONFIG[songKeyOrUrl] || songKeyOrUrl;
                 let actualUrl = Array.isArray(urlSource) ? urlSource[0] : urlSource;
 
+                // 若 Zone 相同且檔案相同，保持播放不中斷
                 if (activeZoneRef.current === zoneKey && currentFileRef.current === actualUrl && audioRef.current && !audioRef.current.paused) return;
                 
                 if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
@@ -359,6 +378,7 @@
                 audio.muted = isMuted; audio.volume = 1;
                 audio.loop = (zoneKey === 'gallery_playlist' || Array.isArray(urlSource)) ? false : loop;
                 
+                // Logic 2: breathe & masterclass 從 3秒起播
                 if (songKeyOrUrl === 'breathe' || songKeyOrUrl === 'masterclass' || actualUrl.includes('breathe') || actualUrl.includes('masterclass')) {
                     audio.currentTime = 3;
                 }
@@ -372,13 +392,13 @@
                         const nextIdx = (playlistIndex + 1) % activePlaylist.length;
                         handleGallerySongChange(nextIdx);
                     } else if (Array.isArray(urlSource) && urlSource.length > 1) {
-                        let curInArr = urlSource.indexOf(actualUrl);
-                        let nextInSeq = (curInArr + 1) % urlSource.length;
+                        let curIdx = urlSource.indexOf(actualUrl);
+                        let nextInSeq = (curIdx + 1) % urlSource.length;
                         playAudioZone(zoneKey, urlSource[nextInSeq], loop);
                     }
                 };
 
-                audio.play().catch(e => console.log("Blocked:", e));
+                audio.play().catch(e => console.log("Audio Play Error:", e));
                 audioRef.current = audio;
                 activeZoneRef.current = zoneKey;
                 currentFileRef.current = actualUrl;
@@ -394,14 +414,14 @@
                 setDir(n > slide ? 'next' : 'prev'); 
                 setSlide(n); 
                 setIsZoomed(false);
-                // 畫廊區域承接邏輯：在 12, 14, 16 移動時不重置 Zone，保持播放。只有離開畫廊區才重置。
+                // 離開畫廊區域（11, 13, 15）時才重置 Zone 以停止音樂
                 if (![11, 13, 15].includes(n)) {
                     activeZoneRef.current = null;
                 }
             };
 
             const allSlides = [
-                <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 0} />,
+                <GallerySlide items={validPhotoIds} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 0} onImageError={handleImageError} />,
                 <div className="flex flex-col items-center justify-center h-full w-full px-4 text-center">
                     <div className="flex-grow flex flex-col items-center justify-center gap-12">
                         <img src="Logo.png" alt="Logo" className="w-full max-w-4xl h-auto drop-shadow-2xl" />
@@ -417,7 +437,7 @@
                 </div>,
                 <div className="flex flex-col h-full items-center justify-center gap-12 px-6">
                     <div className="text-center"><h1 className="text-6xl md:text-9xl font-bold text-white-gold tracking-[0.5em] uppercase">致詞</h1><span className="text-emerald-400 text-2xl md:text-4xl font-light mt-2 block uppercase">Speech</span></div>
-                    <div className="flex flex-col items-center gap-10 text-[8vw] md:text-8xl font-medium text-white drop-shadow-2xl text-center">
+                    <div className="flex flex-col items-center gap-10 md:gap-16 text-[8vw] md:text-8xl font-medium text-white drop-shadow-2xl text-center">
                         <span className="whitespace-nowrap">Morris & Mikey</span><div className="h-[2px] w-48 md:w-96 bg-white/20" /><span>Teddy & Kanji</span>
                     </div>
                 </div>,
@@ -438,7 +458,7 @@
                     <div className="w-full mb-16 border-b border-white/10 pb-8 flex justify-between items-end text-left"><span className="text-emerald-400 text-3xl md:text-7xl font-bold uppercase">Game 1</span><span className="text-white text-3xl md:text-7xl font-black text-right uppercase">被抽中的枱號</span></div>
                     <div className="flex flex-col items-center gap-12 w-full"><p className="text-4xl md:text-7xl font-bold text-white opacity-90 uppercase">被抽中的枱號，每人皆可獲得</p><p className="text-xl md:text-4xl text-white/40 uppercase tracking-widest italic">Every guest wins when their table number is drawn!</p><span className="text-purple-glow font-black text-9xl md:text-[18rem] mt-12 shadow-2xl">豐富獎品</span><span className="text-purple-400/60 text-3xl md:text-7xl uppercase font-bold tracking-widest italic mt-4 uppercase">Fabulous Prizes</span></div>
                 </div>,
-                <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 11} />,
+                <GallerySlide items={validPhotoIds} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 11} onImageError={handleImageError} />,
                 <div className="h-full px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24">
                     <div className="w-full mb-16 border-b border-white/10 pb-8 flex justify-between items-end"><span className="text-emerald-400 text-3xl md:text-7xl font-bold tracking-wide uppercase">Game 2</span><span className="text-white text-5xl md:text-[10rem] font-bold uppercase text-right">競飲</span></div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-16 mb-12 w-full h-[300px] md:h-[500px]">
@@ -461,7 +481,7 @@
                         <span className="text-6xl md:text-[12rem] font-black text-purple-glow uppercase leading-none">冠・亞・季</span><span className="text-3xl md:text-6xl text-white/80 font-medium italic uppercase mt-10">Champion • 1st • 2nd Runner-up</span>
                     </div>
                 </div>,
-                <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 13} />,
+                <GallerySlide items={validPhotoIds} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 13} onImageError={handleImageError} />,
                 <div className="h-full px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24">
                     <div className="w-full transform -translate-y-8">
                         <div className="flex justify-between items-end mb-16 border-b border-white/10 pb-10"><span className="text-emerald-400 text-4xl md:text-8xl font-bold uppercase text-left">Game 3</span><div className="flex flex-col items-end"><span className="text-white text-7xl md:text-[11rem] font-black drop-shadow-2xl text-right">Bingo!</span><span className="text-white/40 text-3xl md:text-4xl uppercase tracking-[0.2em]">Bingo Challenge</span></div></div>
@@ -473,7 +493,7 @@
                         </div>
                     </div>
                 </div>,
-                <GallerySlide items={domeItems} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 15} />,
+                <GallerySlide items={validPhotoIds} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 15} onImageError={handleImageError} />,
                 <div className="h-full text-center flex flex-col justify-center items-center"><h2 className="text-8xl md:text-[15rem] font-black text-white-gold leading-none py-8 uppercase">抽獎環節</h2><span className="text-white/60 text-4xl md:text-7xl font-light uppercase mt-6 italic tracking-widest leading-none">Lucky Draw Session</span></div>,
                 <div className="h-full flex items-center justify-center overflow-hidden relative w-full">
                     <BouncingTextFX text="加碼" count={30} />
@@ -488,8 +508,8 @@
                 <div className="flex flex-col items-center justify-center h-full text-center gap-12 px-6">
                     <h2 className="text-5xl md:text-9xl lg:text-[11rem] font-bold text-white tracking-widest italic drop-shadow-2xl leading-none">感謝各位蒞臨</h2>
                     <div className="flex flex-col gap-4">
-                        <p className="text-2xl md:text-[5.5rem] lg:text-[6.5rem] font-bold text-white/90 whitespace-nowrap tracking-wider uppercase">2026 冠恒集團春茗</p>
-                        <p className="text-2xl md:text-[5.5rem] lg:text-[6.5rem] font-bold text-white/90 whitespace-nowrap tracking-wider leading-snug uppercase">圓滿結束</p>
+                        <p className="text-2xl md:text-5xl lg:text-[6.5rem] font-bold text-white/90 whitespace-nowrap tracking-wider uppercase">2026 冠恒集團春茗</p>
+                        <p className="text-2xl md:text-5xl lg:text-[6.5rem] font-bold text-white/90 whitespace-nowrap tracking-wider leading-snug uppercase">圓滿結束</p>
                     </div>
                     <h3 className="text-6xl md:text-9xl lg:text-[13rem] font-black text-yellow-400 italic animate-pulse mt-6 uppercase leading-none">下年再見!</h3>
                 </div>
@@ -498,24 +518,28 @@
             useEffect(() => {
                 if (!isReady || !interacted) return;
                 const i = slide;
+                // 分區音樂管理
                 if (i === 0) playAudioZone('d1', 'go');
                 else if (i === 1) playAudioZone('sl', 'welcome');
                 else if (i === 2) playAudioZone('sp', 'boss');
-                else if (i >= 3 && i <= 7) playAudioZone('service_awards', 'misshk');
-                else if (i >= 8 && i <= 10) playAudioZone('game_time', 'ukulele');
+                else if (i >= 3 && i <= 7) playAudioZone('service_awards', 'misshk'); // Slide 4-8 連播
+                else if (i >= 8 && i <= 10) playAudioZone('game_time', 'ukulele'); // Slide 9-11 連播
                 else if (i === 11 || i === 13 || i === 15) playAudioZone('gallery_playlist', activePlaylist[playlistIndex]);
-                else if (i === 12) playAudioZone('g2', BGM_CONFIG.game2Seq); 
+                else if (i === 12) playAudioZone('game2', BGM_CONFIG.game2Seq); 
                 else if (i === 14) playAudioZone('g3', 'mark6');
                 else if (i === 16) playAudioZone('dr', 'draw');
                 else if (i === 17) playAudioZone('s1', 'sb1');
                 else if (i === 18) playAudioZone('s2', 'sb2');
                 else if (i === 19) playAudioZone('final', 'breathe');
-                else { if (audioRef.current) audioRef.current.pause(); activeZoneRef.current = null; currentFileRef.current = null; }
+                else { 
+                    if (audioRef.current) audioRef.current.pause(); 
+                    activeZoneRef.current = null; currentFileRef.current = null; 
+                }
             }, [slide, interacted, playlistIndex, isReady]);
 
             useEffect(() => {
                 let imgL = 0, audL = 0;
-                const imgU = PHOTO_IDS.map(id => `https://drive.google.com/thumbnail?id=${id}&sz=w1000`);
+                const imgU = MASTER_PHOTO_IDS.map(id => `https://drive.google.com/thumbnail?id=${id}&sz=w1000`);
                 const audU = Object.values(BGM_CONFIG).flat();
                 const total = imgU.length + audU.length;
                 const check = () => {
@@ -543,10 +567,10 @@
                         </div>
                     )}
                     <div className={`content-wrapper h-full w-full ${!interacted ? 'is-blurred' : 'is-revealed'}`}>
-                        <div className="fixed top-6 left-6 z-[100]"><button onClick={() => setIsMuted(!isMuted)} className="p-3 bg-white/10 border border-white/20 rounded-full transition-all shadow-2xl backdrop-blur-md">{isMuted ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2V15H6L11 19V5Z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> : <div className="flex items-center gap-2"><div className="flex items-end h-3 gap-0.5">{[0.1, 0.4, 0.2, 0.5].map((d, i) => (<div key={i} className="w-0.5 bg-yellow-400 animate-bounce" style={{ height: '100%', animationDelay: `${d}s` }} />))}</div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2V15H6L11 19V5Z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></div>}</button></div>
+                        <div className="fixed top-6 left-6 z-[100]"><button onClick={() => setIsMuted(!isMuted)} className="p-3 bg-white/10 border border-white/20 rounded-full shadow-2xl backdrop-blur-md">{isMuted ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2V15H6L11 19V5Z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg> : <div className="flex items-center gap-2"><div className="flex items-end h-3 gap-0.5">{[0.1, 0.4, 0.2, 0.5].map((d, i) => (<div key={i} className="w-0.5 bg-yellow-400 animate-bounce" style={{ height: '100%', animationDelay: `${d}s` }} />))}</div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2V15H6L11 19V5Z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></div>}</button></div>
                         <div className="slide-num-label">{slide + 1} / {allSlides.length}</div>
                         
-                        {(slide === 11 || slide === 13 || slide === 15) && interacted && (
+                        {(slide === 0 || slide === 11 || slide === 13 || slide === 15) && interacted && (
                             <div className="liquid-glass-player">
                                 {activePlaylist.map((k, idx) => (
                                     <button key={k} onClick={() => handleGallerySongChange(idx)} className={`song-btn ${playlistIndex === idx ? 'active' : ''}`}>{k === 'go' ? 'Go' : k === 'breathe' ? 'Air' : 'MC'}</button>
