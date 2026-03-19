@@ -224,7 +224,7 @@
             "1kKazZd3rfJzoefw-USdyhqTNBFPpQ4uB", "1KEaRhFsPgBQQwx6bgpKafEnlYZQNu_Oi", "1cj4UgaLi6S17yFn2zeN783z3_VIQHPXU", 
             "17kdoE95toW4pnnps8cd1--nCr3_KOOl7", "1uG42rZ40GqS5nevtevQ4DrV66yzwL0M8", "1Qv5qHXFWxpiP-rf_075fEIoP92aB95cW", 
             "15R6-eCEq8dnoyd9gcF6IkmPQh33KXfos", "1yri2xKHS_Dhg3Nfr_g67FWMNfMoWaD3B",
-            // 新增 10 個 ID
+            // 10 New IDs
             "1BMD6mKY-XV7vKM0hBsKYhpTBNDuiJ3YS", "1gyOQNquWmNnCccHV29nRnYY3_VntsFyA", "12jG9zoa45Ypg05x2bcXwgbnt-Zt9o9UN", 
             "1e4XUmyWzlQcZPjfjp3kKhgHhRD2mzY0h", "1bv44skFrzktH9Cs95qSftgvXgSzVunUI", "1fd1Zr6farFLNGBn6nhtElxjBJZA4Q3S-", 
             "11oOHW1pTha-v1lKMjyYUpgT9lkfehS28", "1kI-214ZHFArq_06yVZPWJ7yINqk899A5", "1CyfG2BbeR5IQcSrQhsYRp-vxoAM5Pw8b", 
@@ -280,7 +280,7 @@
                 if (!isActive) return;
                 let timer;
                 if (isZoomed) {
-                    // 放大查看僅停留 2 秒
+                    // 修復：放大查看僅停留 2 秒
                     timer = setTimeout(() => setIsZoomed(false), 2000);
                 } else if (items.length > 0) {
                     timer = setTimeout(() => {
@@ -290,6 +290,7 @@
                 }
                 return () => clearTimeout(timer);
             }, [isZoomed, isActive, items, setIsZoomed, setFocusedImage]);
+
             useEffect(() => {
                 let raf;
                 function animateDome() {
@@ -302,24 +303,27 @@
                 raf = requestAnimationFrame(animateDome);
                 return () => cancelAnimationFrame(raf);
             }, [isZoomed, radius]);
+
             if (items.length === 0) return null;
+
             return (
                 <div className="absolute inset-0 flex items-center justify-center [perspective:1200px] z-10 transition-all duration-1000"
                     style={{ transform: isZoomed ? 'scale(0.8) translateZ(-200px)' : 'scale(1)', opacity: isZoomed ? 0.2 : 1 }}>
                     <div ref={stageRef} className="relative w-0 h-0 [transform-style:preserve-3d]">
                         {items.map((id, i) => {
-                            const rowSizes = [10, 10, 11, 10, 10]; // 51 張
-                            let currentRow = 0, currentIdxInRow = 0, countBefore = 0;
-                            for(let r=0; r<5; r++){
-                                if(i < countBefore + rowSizes[r]){
-                                    currentRow = r;
-                                    currentIdxInRow = i - countBefore;
-                                    break;
-                                }
-                                countBefore += rowSizes[r];
-                            }
-                            const yaw = currentIdxInRow * (360 / rowSizes[currentRow]);
-                            const pitch = (currentRow - 2) * 15;
+                            // 動態計算分佈：確保所有 51 張圖都被分配座標
+                            const rows = 5;
+                            const itemsPerRow = Math.ceil(items.length / rows);
+                            const row = Math.floor(i / itemsPerRow);
+                            const col = i % itemsPerRow;
+                            
+                            // 每一行內的均勻偏航角
+                            const startIdx = row * itemsPerRow;
+                            const endIdx = Math.min(items.length, (row + 1) * itemsPerRow);
+                            const countInThisRow = endIdx - startIdx;
+                            const yaw = (i - startIdx) * (360 / countInThisRow);
+                            
+                            const pitch = (row - 2) * 15;
                             return (
                                 <div key={id} className="absolute w-[210px] h-[135px] md:w-[320px] md:h-[200px] -left-[105px] md:-left-[160px] -top-[67px] md:-top-[100px] [transform-style:preserve-3d]"
                                     style={{ transform: `rotateY(${yaw}deg) rotateX(${-pitch}deg) translateZ(${radius}px)` }}>
@@ -349,7 +353,7 @@
             const [isMuted, setIsMuted] = useState(false);
             
             const [deadIds, setDeadIds] = useState(new Set());
-            const validPhotoIds = useMemo(() => MASTER_PHOTO_IDS.filter(id => !deadIds.has(id)), [deadIds]);
+            const validPhotoIds = useMemo(() => MASTER_PHOTO_IDS.filter(id => !deadIds.has(id)), [deadIds, MASTER_PHOTO_IDS]);
 
             const [playlistIndex, setPlaylistIndex] = useState(0);
             const [progress, setProgress] = useState(0);
@@ -436,31 +440,31 @@
             );
 
             const allSlides = [
-                /* 0 */ <GallerySlide items={validPhotoIds} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 0} onImageError={handleImageError} />,
-                /* 1 */ <div className="flex flex-col items-center justify-center h-full w-full px-4 text-center"><div className="flex-grow flex flex-col items-center justify-center gap-12"><img src="Logo.png" alt="Logo" className="w-full max-w-4xl h-auto drop-shadow-2xl" /><div className="flex flex-col gap-2"><h1 className="text-4xl md:text-7xl font-light text-white-gold tracking-widest uppercase">Annual Dinner</h1><div className="text-orange-300 text-xl md:text-3xl font-medium tracking-[0.5em] mt-4">2 0 2 5</div></div><div className="flex flex-col gap-6 text-[8.5vw] md:text-[5.5rem] font-black text-white-gold drop-shadow-2xl mt-4"><span className="whitespace-nowrap leading-tight">冠世風華廿二載</span><span className="whitespace-nowrap leading-tight">恒守初心志未改</span></div></div></div>,
-                /* 2 */ <div className="flex flex-col h-full items-center justify-center gap-12 px-6"><div className="text-center"><h1 className="text-6xl md:text-9xl font-bold text-white-gold tracking-[0.5em] uppercase">致詞</h1><span className="text-emerald-400 text-2xl md:text-4xl font-light mt-2 block uppercase">Speech</span></div><div className="flex flex-col items-center gap-10 md:gap-16 text-[8vw] md:text-8xl font-medium text-white drop-shadow-2xl text-center"><span className="whitespace-nowrap">Morris & Mikey</span><div className="h-[2px] w-48 md:w-96 bg-white/20" /><span>Teddy & Kanji</span></div></div>,
-                /* 3 */ lsaTitle,
-                /* 4 */ <div className="h-full text-center px-6 flex flex-col justify-center items-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black mb-12">10 Years</span><span className="text-5xl md:text-9xl font-medium text-white">David Tsang</span></div>,
-                /* 5 */ <div className="h-full text-center px-6 flex flex-col justify-center items-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black mb-12">15 Years</span><span className="text-5xl md:text-9xl font-medium text-white">Kanji Kwok</span></div>,
-                /* 6 */ <div className="h-full text-center px-6 flex flex-col justify-center items-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black mb-12">20 Years</span><div className="flex flex-col gap-6"><span className="text-5xl md:text-9xl font-medium text-white">Kason Lau</span><span className="text-5xl md:text-9xl font-medium text-white">Steven Ngai</span></div></div>,
-                /* 7 */ <div className="h-full text-center px-6 flex flex-col justify-center items-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black mb-12">25 Years</span><span className="text-5xl md:text-9xl font-medium text-white">Wilson Chang</span></div>,
-                /* 8 */ lsaTitle,
-                /* 9 */ <div className="h-full text-center flex flex-col justify-center items-center"><h2 className="text-[15vw] md:text-[15rem] font-black italic text-emerald-glow tracking-tighter uppercase leading-none animate-pulse">GAME TIME!</h2></div>,
-                /* 10 */ gameTitle(1, "圍獎"),
-                /* 11 */ <div className="h-full text-center px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24"><div className="flex flex-col items-center gap-12 w-full"><p className="text-4xl md:text-7xl font-bold text-white opacity-90 uppercase">被抽中的枱號，每人皆可獲得</p><p className="text-xl md:text-4xl text-white/40 uppercase tracking-widest italic">Every guest wins when their table number is drawn!</p><span className="text-purple-glow font-black text-9xl md:text-[18rem] mt-12 shadow-2xl">豐富獎品</span><span className="text-purple-400/60 text-3xl md:text-7xl uppercase font-bold tracking-widest italic mt-4 uppercase">Fabulous Prizes</span></div></div>,
-                /* 12 */ <div className="flex flex-col h-full items-center justify-center text-center gap-12 w-full max-w-8xl mx-auto px-6"><div className="text-left w-full"><span className="text-yellow-500 text-4xl md:text-7xl font-bold uppercase italic">唔係講笑...</span><p className="text-white/40 text-2xl md:text-4xl uppercase italic font-medium mt-4">Seriously...</p></div><div className="flex flex-col gap-8"><h2 className="text-7xl md:text-[12rem] font-black tracking-wider text-soft-gold-glow leading-tight">今晚獎金、獎品<br />非常豐富！！</h2><p className="text-white/40 text-3xl md:text-6xl uppercase font-medium">Massive prizes & cash await!!</p></div></div>,
-                /* 13 */ <GallerySlide items={validPhotoIds} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 13} onImageError={handleImageError} />,
-                /* 14 */ gameTitle(2, "競飲"),
-                /* 15 */ <div className="h-full px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24"><div className="grid grid-cols-1 md:grid-cols-3 gap-16 mb-12 w-full h-[300px] md:h-[500px]">{[1,2,3].map((g, idx) => {const groupData = ["2, 5, 8, 11, 15, 18", "1, 6, 9, 12, 16, 19", "3, 7, 10, 13, 17"]; return (<div key={idx} className="flex flex-col h-full flex-1 relative"><div onClick={() => { const n = [...revealedGroups]; n[idx] = true; setRevealedGroups(n); }} className={`flex-grow bg-white/5 border border-white/10 p-12 rounded-[40px] cursor-pointer transition-all duration-1000 flex flex-col justify-center items-center shadow-2xl ${revealedGroups[idx] ? 'blur-0 bg-white/10' : 'blur-2xl'}`}><p className="text-yellow-500 text-2xl font-bold uppercase mb-4">Group {g}</p><p className="text-white text-4xl md:text-6xl font-black text-center">{groupData[idx]}</p></div><div className="mt-8 text-emerald-500 animate-bounce flex justify-center text-6xl">↓</div><div className="w-full bg-white/5 border border-white/20 py-8 rounded-3xl text-center mt-4 shadow-lg"><span className="text-3xl md:text-5xl font-black text-white uppercase opacity-90 block">晉級</span><span className="text-sm md:text-lg text-white/50 uppercase font-bold tracking-tighter">PROMOTED</span></div></div>); })}</div><div className="mt-24 flex flex-col items-center px-16 py-12 md:px-64 md:py-20 bg-gradient-to-r from-emerald-600/30 to-emerald-400/30 border-2 border-emerald-400/60 rounded-[60px] shadow-[0_0_120px_rgba(16,185,129,0.2)]"><span className="text-6xl md:text-[12rem] font-black text-purple-glow uppercase leading-none">冠・亞・季</span><span className="text-3xl md:text-6xl text-white/80 font-medium italic uppercase mt-10">Champion • 1st • 2nd Runner-up</span></div></div>,
-                /* 16 */ <GallerySlide items={validPhotoIds} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 16} onImageError={handleImageError} />,
-                /* 17 */ gameTitle(3, "幸運Mark 6", "Lucky Mark 6"),
-                /* 18 */ <div className="h-full px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24"><div className="w-full transform -translate-y-8 text-left"><div className="space-y-12 md:space-y-20 pl-12 border-l-8 border-emerald-500/50"><div className="flex flex-col gap-4"><div className="flex items-center gap-12"><div className="w-16 h-16 md:w-24 md:h-24 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-4xl">1</div><p className="text-4xl md:text-7xl font-bold text-white leading-tight">每人手上已有一張「六合彩飛」</p></div><p className="text-white/40 text-2xl md:text-4xl ml-28 md:ml-36 uppercase font-medium">Each guest holds a "Mark Six" ticket.</p></div><div className="flex flex-col gap-4"><div className="flex items-center gap-12"><div className="w-16 h-16 md:w-24 md:h-24 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-4xl">2</div><p className="text-4xl md:text-7xl font-bold text-white leading-tight">會從 1 - 49 號中抽數字</p></div><p className="text-white/40 text-2xl md:text-4xl ml-28 md:ml-36 uppercase font-medium">Numbers 1-49 will be drawn randomly.</p></div><div className="flex flex-col gap-4"><div className="flex items-center gap-12"><div className="w-16 h-16 md:w-24 md:h-24 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-4xl">3</div><p className="text-4xl md:text-7xl font-bold text-white leading-tight">最快集齊 <span class='text-emerald-400 font-black text-5xl md:text-[9rem]'>6</span> 組號碼</p></div><p className="text-white/40 text-2xl md:text-4xl ml-28 md:ml-36 uppercase font-medium">First to complete 6 sets of numbers wins!</p></div><div className="p-12 md:p-20 bg-red-600/20 border-4 border-red-500/30 rounded-[50px] mt-16 shadow-2xl flex flex-col gap-6 text-center"><p className="text-4xl md:text-8xl font-black text-red-500 tracking-wider uppercase leading-none">名額五個，記得盡快舉手行出嚟喇！</p><p className="text-2xl md:text-5xl font-bold text-red-400/60 uppercase">Only 5 winners! Raise your hand ASAP!</p></div></div></div></div>,
-                /* 19 */ <div className="flex flex-col items-center justify-center h-full text-center gap-10 px-6"><h2 className="text-6xl md:text-8xl font-black text-white-gold uppercase tracking-widest">LUCKY MARK 6 RESULT</h2><div className="flex flex-col gap-8 bg-white/5 border border-white/10 p-12 md:p-16 rounded-[50px] shadow-2xl backdrop-blur-md max-w-7xl"><div className="space-y-2"><p className="text-4xl md:text-6xl font-bold text-emerald-400">2026年2月3日（第十四期）</p><p className="text-xl md:text-3xl text-emerald-400/60 uppercase font-medium">February 3, 2026 (No. 14)</p></div><div className="h-[1px] w-full bg-white/10" /><div className="space-y-4"><p className="text-3xl md:text-5xl font-medium text-white/90">派彩號碼為 <span className="text-yellow-400 font-black underline underline-offset-8">42、39、23、27、12及37</span></p><p className="text-xl md:text-3xl text-white/40 uppercase font-medium">Winning Numbers: <span className="text-yellow-400/80">42, 39, 23, 27, 12 & 37</span></p></div></div></div>,
-                /* 20 */ <GallerySlide items={validPhotoIds} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 20} onImageError={handleImageError} />,
-                /* 21 */ <div className="h-full text-center flex flex-col justify-center items-center"><h2 className="text-8xl md:text-[15rem] font-black text-white-gold leading-none py-8 uppercase">抽獎環節</h2><span className="text-white/60 text-4xl md:text-7xl font-light uppercase mt-6 italic tracking-widest leading-none">Lucky Draw Session</span></div>,
-                /* 22 */ <div className="h-full flex items-center justify-center overflow-hidden relative w-full"><BouncingTextFX text="加碼" count={30} /><div className="absolute inset-0 aurora-bonus blur-[120px] opacity-60" /><div className="bonus-box z-10 text-center shadow-[0_0_100px_rgba(249,115,22,0.8)]"><h2 className="text-7xl md:text-[15rem] font-black text-orange-500 italic uppercase leading-none">加碼！！</h2></div></div>,
-                /* 23 */ <div className="h-full flex items-center justify-center overflow-hidden relative w-full"><BouncingTextFX text="再加碼" count={30} /><div className="absolute inset-0 aurora-bonus blur-[120px] opacity-60" /><div className="bonus-box z-10 text-center border-[#ea580c] shadow-[0_0_120px_rgba(234,88,12,0.8)]"><h2 className="text-7xl md:text-[15rem] font-black text-[#ea580c] italic uppercase leading-none">再加碼！！</h2></div></div>,
-                /* 24 */ <div className="flex flex-col items-center justify-center h-full text-center gap-12 px-6"><h2 className="text-5xl md:text-9xl lg:text-[11rem] font-bold text-white tracking-widest italic drop-shadow-2xl leading-none">感謝各位蒞臨</h2><div className="flex flex-col gap-4"><p className="text-2xl md:text-5xl lg:text-[6.5rem] font-bold text-white/90 whitespace-nowrap tracking-wider uppercase">2026 冠恒集團春茗</p><p className="text-2xl md:text-5xl lg:text-[6.5rem] font-bold text-white/90 whitespace-nowrap tracking-wider leading-snug uppercase">圓滿結束</p></div><h3 className="text-6xl md:text-9xl lg:text-[13rem] font-black text-yellow-400 italic animate-pulse mt-6 uppercase leading-none">下年再見!</h3></div>
+                /* 0: Dome 1 */ <GallerySlide items={validPhotoIds} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 0} onImageError={handleImageError} />,
+                /* 1: Slogan */ <div className="flex flex-col items-center justify-center h-full w-full px-4 text-center"><div className="flex-grow flex flex-col items-center justify-center gap-12"><img src="Logo.png" alt="Logo" className="w-full max-w-4xl h-auto drop-shadow-2xl" /><div className="flex flex-col gap-2"><h1 className="text-4xl md:text-7xl font-light text-white-gold tracking-widest uppercase">Annual Dinner</h1><div className="text-orange-300 text-xl md:text-3xl font-medium tracking-[0.5em] mt-4">2 0 2 5</div></div><div className="flex flex-col gap-6 text-[8.5vw] md:text-[5.5rem] font-black text-white-gold drop-shadow-2xl mt-4"><span className="whitespace-nowrap leading-tight">冠世風華廿二載</span><span className="whitespace-nowrap leading-tight">恒守初心志未改</span></div></div></div>,
+                /* 2: Speech */ <div className="flex flex-col h-full items-center justify-center gap-12 px-6"><div className="text-center"><h1 className="text-6xl md:text-9xl font-bold text-white-gold tracking-[0.5em] uppercase">致詞</h1><span className="text-emerald-400 text-2xl md:text-4xl font-light mt-2 block uppercase">Speech</span></div><div className="flex flex-col items-center gap-10 md:gap-16 text-[8vw] md:text-8xl font-medium text-white drop-shadow-2xl text-center"><span className="whitespace-nowrap">Morris & Mikey</span><div className="h-[2px] w-48 md:w-96 bg-white/20" /><span>Teddy & Kanji</span></div></div>,
+                /* 3: LSA Title */ lsaTitle,
+                /* 4: 10Y */ <div className="h-full text-center px-6 flex flex-col justify-center items-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black mb-12">10 Years</span><span className="text-5xl md:text-9xl font-medium text-white">David Tsang</span></div>,
+                /* 5: 15Y */ <div className="h-full text-center px-6 flex flex-col justify-center items-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black mb-12">15 Years</span><span className="text-5xl md:text-9xl font-medium text-white">Kanji Kwok</span></div>,
+                /* 6: 20Y */ <div className="h-full text-center px-6 flex flex-col justify-center items-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black mb-12">20 Years</span><div className="flex flex-col gap-6"><span className="text-5xl md:text-9xl font-medium text-white">Kason Lau</span><span className="text-5xl md:text-9xl font-medium text-white">Steven Ngai</span></div></div>,
+                /* 7: 25Y */ <div className="h-full text-center px-6 flex flex-col justify-center items-center"><span className="text-white-gold text-6xl md:text-[10rem] font-black mb-12">25 Years</span><span className="text-5xl md:text-9xl font-medium text-white">Wilson Chang</span></div>,
+                /* 8: LSA Title Dup */ lsaTitle,
+                /* 9: Game Intro */ <div className="h-full text-center flex flex-col justify-center items-center"><h2 className="text-[15vw] md:text-[15rem] font-black italic text-emerald-glow tracking-tighter uppercase leading-none animate-pulse">GAME TIME!</h2></div>,
+                /* 10: Game 1 Title */ gameTitle(1, "圍獎"),
+                /* 11: Game 1 Rules */ <div className="h-full text-center px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24"><div className="flex flex-col items-center gap-12 w-full"><p className="text-4xl md:text-7xl font-bold text-white opacity-90 uppercase">被抽中的枱號，每人皆可獲得</p><p className="text-xl md:text-4xl text-white/40 uppercase tracking-widest italic">Every guest wins when their table number is drawn!</p><span className="text-purple-glow font-black text-9xl md:text-[18rem] mt-12 shadow-2xl">豐富獎品</span><span className="text-purple-400/60 text-3xl md:text-7xl uppercase font-bold tracking-widest italic mt-4 uppercase">Fabulous Prizes</span></div></div>,
+                /* 12: Seriously */ <div className="flex flex-col h-full items-center justify-center text-center gap-12 w-full max-w-8xl mx-auto px-6"><div className="text-left w-full"><span className="text-yellow-500 text-4xl md:text-7xl font-bold uppercase italic">唔係講笑...</span><p className="text-white/40 text-2xl md:text-4xl uppercase italic font-medium mt-4">Seriously...</p></div><div className="flex flex-col gap-8"><h2 className="text-7xl md:text-[12rem] font-black tracking-wider text-soft-gold-glow leading-tight">今晚獎金、獎品<br />非常豐富！！</h2><p className="text-white/40 text-3xl md:text-6xl uppercase font-medium">Massive prizes & cash await!!</p></div></div>,
+                /* 13: Dome 2 */ <GallerySlide items={validPhotoIds} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 13} onImageError={handleImageError} />,
+                /* 14: Game 2 Title */ gameTitle(2, "競飲"),
+                /* 15: Game 2 Content */ <div className="h-full px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24"><div className="grid grid-cols-1 md:grid-cols-3 gap-16 mb-12 w-full h-[300px] md:h-[500px]">{[1,2,3].map((g, idx) => {const groupData = ["2, 5, 8, 11, 15, 18", "1, 6, 9, 12, 16, 19", "3, 7, 10, 13, 17"]; return (<div key={idx} className="flex flex-col h-full flex-1 relative"><div onClick={() => { const n = [...revealedGroups]; n[idx] = true; setRevealedGroups(n); }} className={`flex-grow bg-white/5 border border-white/10 p-12 rounded-[40px] cursor-pointer transition-all duration-1000 flex flex-col justify-center items-center shadow-2xl ${revealedGroups[idx] ? 'blur-0 bg-white/10' : 'blur-2xl'}`}><p className="text-yellow-500 text-2xl font-bold uppercase mb-4">Group {g}</p><p className="text-white text-4xl md:text-6xl font-black text-center">{groupData[idx]}</p></div><div className="mt-8 text-emerald-500 animate-bounce flex justify-center text-6xl">↓</div><div className="w-full bg-white/5 border border-white/20 py-8 rounded-3xl text-center mt-4 shadow-lg"><span className="text-3xl md:text-5xl font-black text-white uppercase opacity-90 block">晉級</span><span className="text-sm md:text-lg text-white/50 uppercase font-bold tracking-tighter">PROMOTED</span></div></div>); })}</div><div className="mt-24 flex flex-col items-center px-16 py-12 md:px-64 md:py-20 bg-gradient-to-r from-emerald-600/30 to-emerald-400/30 border-2 border-emerald-400/60 rounded-[60px] shadow-[0_0_120px_rgba(16,185,129,0.2)]"><span className="text-6xl md:text-[12rem] font-black text-purple-glow uppercase leading-none">冠・亞・季</span><span className="text-3xl md:text-6xl text-white/80 font-medium italic uppercase mt-10">Champion • 1st • 2nd Runner-up</span></div></div>,
+                /* 16: Dome 3 */ <GallerySlide items={validPhotoIds} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 16} onImageError={handleImageError} />,
+                /* 17: Game 3 Title */ gameTitle(3, "幸運Mark 6", "Lucky Mark 6"),
+                /* 18: Game 3 Rules */ <div className="h-full px-6 flex flex-col justify-center items-center w-full max-w-none px-12 md:px-24"><div className="w-full transform -translate-y-8 text-left"><div className="space-y-12 md:space-y-20 pl-12 border-l-8 border-emerald-500/50"><div className="flex flex-col gap-4"><div className="flex items-center gap-12"><div className="w-16 h-16 md:w-24 md:h-24 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-4xl">1</div><p className="text-4xl md:text-7xl font-bold text-white leading-tight">每人手上已有一張「六合彩飛」</p></div><p className="text-white/40 text-2xl md:text-4xl ml-28 md:ml-36 uppercase font-medium">Each guest holds a "Mark Six" ticket.</p></div><div className="flex flex-col gap-4"><div className="flex items-center gap-12"><div className="w-16 h-16 md:w-24 md:h-24 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-4xl">2</div><p className="text-4xl md:text-7xl font-bold text-white leading-tight">會從 1 - 49 號中抽數字</p></div><p className="text-white/40 text-2xl md:text-4xl ml-28 md:ml-36 uppercase font-medium">Numbers 1-49 will be drawn randomly.</p></div><div className="flex flex-col gap-4"><div className="flex items-center gap-12"><div className="w-16 h-16 md:w-24 md:h-24 bg-emerald-500 text-black rounded-full flex items-center justify-center font-black text-4xl">3</div><p className="text-4xl md:text-7xl font-bold text-white leading-tight">最快集齊 <span class='text-emerald-400 font-black text-5xl md:text-[9rem]'>6</span> 組號碼</p></div><p className="text-white/40 text-2xl md:text-4xl ml-28 md:ml-36 uppercase font-medium">First to complete 6 sets of numbers wins!</p></div><div className="p-12 md:p-20 bg-red-600/20 border-4 border-red-500/30 rounded-[50px] mt-16 shadow-2xl flex flex-col gap-6 text-center"><p className="text-4xl md:text-8xl font-black text-red-500 tracking-wider uppercase leading-none">名額五個，記得盡快舉手行出嚟喇！</p><p className="text-2xl md:text-5xl font-bold text-red-400/60 uppercase">Only 5 winners! Raise your hand ASAP!</p></div></div></div></div>,
+                /* 19: Bingo Result */ <div className="flex flex-col items-center justify-center h-full text-center gap-10 px-6"><h2 className="text-6xl md:text-8xl font-black text-white-gold uppercase tracking-widest">LUCKY MARK 6 RESULT</h2><div className="flex flex-col gap-8 bg-white/5 border border-white/10 p-12 md:p-16 rounded-[50px] shadow-2xl backdrop-blur-md max-w-7xl"><div className="space-y-2"><p className="text-4xl md:text-6xl font-bold text-emerald-400">2026年2月3日（第十四期）</p><p className="text-xl md:text-3xl text-emerald-400/60 uppercase font-medium">February 3, 2026 (No. 14)</p></div><div className="h-[1px] w-full bg-white/10" /><div className="space-y-4"><p className="text-3xl md:text-5xl font-medium text-white/90">派彩號碼為 <span className="text-yellow-400 font-black underline underline-offset-8">42、39、23、27、12及37</span></p><p className="text-xl md:text-3xl text-white/40 uppercase font-medium">Winning Numbers: <span className="text-yellow-400/80">42, 39, 23, 27, 12 & 37</span></p></div></div></div>,
+                /* 20: Dome 4 */ <GallerySlide items={validPhotoIds} isZoomed={isZoomed} setIsZoomed={setIsZoomed} setFocusedImage={setFocusedImage} isActive={slide === 20} onImageError={handleImageError} />,
+                /* 21: Draw Title */ <div className="h-full text-center flex flex-col justify-center items-center"><h2 className="text-8xl md:text-[15rem] font-black text-white-gold leading-none py-8 uppercase">抽獎環節</h2><span className="text-white/60 text-4xl md:text-7xl font-light uppercase mt-6 italic tracking-widest leading-none">Lucky Draw Session</span></div>,
+                /* 22: Bonus */ <div className="h-full flex items-center justify-center overflow-hidden relative w-full"><BouncingTextFX text="加碼" count={30} /><div className="absolute inset-0 aurora-bonus blur-[120px] opacity-60" /><div className="bonus-box z-10 text-center shadow-[0_0_100px_rgba(249,115,22,0.8)]"><h2 className="text-7xl md:text-[15rem] font-black text-orange-500 italic uppercase leading-none">加碼！！</h2></div></div>,
+                /* 23: Re-bonus */ <div className="h-full flex items-center justify-center overflow-hidden relative w-full"><BouncingTextFX text="再加碼" count={30} /><div className="absolute inset-0 aurora-bonus blur-[120px] opacity-60" /><div className="bonus-box z-10 text-center border-[#ea580c] shadow-[0_0_120px_rgba(234,88,12,0.8)]"><h2 className="text-7xl md:text-[15rem] font-black text-[#ea580c] italic uppercase leading-none">再加碼！！</h2></div></div>,
+                /* 24: Thank you */ <div className="flex flex-col items-center justify-center h-full text-center gap-12 px-6"><h2 className="text-5xl md:text-9xl lg:text-[11rem] font-bold text-white tracking-widest italic drop-shadow-2xl leading-none">感謝各位蒞臨</h2><div className="flex flex-col gap-4"><p className="text-2xl md:text-5xl lg:text-[6.5rem] font-bold text-white/90 whitespace-nowrap tracking-wider uppercase">2026 冠恒集團春茗</p><p className="text-2xl md:text-5xl lg:text-[6.5rem] font-bold text-white/90 whitespace-nowrap tracking-wider leading-snug uppercase">圓滿結束</p></div><h3 className="text-6xl md:text-9xl lg:text-[13rem] font-black text-yellow-400 italic animate-pulse mt-6 uppercase leading-none">下年再見!</h3></div>
             ];
 
             useEffect(() => {
@@ -482,7 +486,6 @@
                 }
             }, [slide, interacted, isReady, assetUrls]);
 
-            // 強制預載與離線準備邏輯
             useEffect(() => {
                 const imgU = MASTER_PHOTO_IDS.map(id => `https://drive.google.com/thumbnail?id=${id}&sz=w1000`);
                 const audU = Object.values(BGM_CONFIG).flat();
@@ -500,14 +503,19 @@
                     }
                 };
 
-                // 強制加載圖片
-                imgU.forEach(u => {
+                // 強制加載圖片並處理失效 ID
+                imgU.forEach((u, idx) => {
                     const img = new Image();
                     img.src = u;
-                    img.onload = img.onerror = check;
+                    img.onload = check;
+                    img.onerror = () => {
+                        // 如果圖片加載失敗，立即加入 deadIds 以觸發全站畫廊重排
+                        setDeadIds(prev => new Set(prev).add(MASTER_PHOTO_IDS[idx]));
+                        check();
+                    };
                 });
 
-                // 強制加載音訊 (使用 fetch 轉 Blob URL 確保完全下載)
+                // 強制加載音訊
                 audU.forEach(u => {
                     fetch(u)
                         .then(res => res.blob())
@@ -516,13 +524,9 @@
                             setAssetUrls(prev => ({ ...prev, [u]: blobUrl }));
                             check();
                         })
-                        .catch(() => {
-                            // 若 fetch 失敗則回退，直接使用原連結
-                            check();
-                        });
+                        .catch(() => check());
                 });
                 
-                // 安全保險定時器
                 const timer = setTimeout(() => { if (!isReady) setIsReady(true); }, 60000);
                 return () => clearTimeout(timer);
             }, []);
